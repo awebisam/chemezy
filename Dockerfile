@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12.7-alpine
 
 WORKDIR /app
 
@@ -6,7 +6,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
