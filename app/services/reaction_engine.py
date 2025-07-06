@@ -2,14 +2,19 @@ import hashlib
 import json
 import uuid
 import asyncio
-from typing import Optional
-from sqlmodel import Session, select
+from typing import Optional, Dict, Any, List, Tuple
 
+from sqlmodel import Session, select
 import dspy
+
+# Local application imports
 from app.core.config import settings
 from app.models.reaction import ReactionCache, Discovery
 from app.services.pubchem_service import PubChemService
 from app.schemas.reaction import ReactionResponse, ChemicalProduct, ReactionPredictionOutput
+
+# Assuming dspy_extended provides a robust module for typed, retried predictions.
+from app.services.dspy_extended import TypedCOTPredict
 
 
 class ReactionPrediction(dspy.Signature):
@@ -30,11 +35,12 @@ class ReactionPrediction(dspy.Signature):
 
     CRITICAL: You must return ONLY a valid JSON object that matches the ReactionPredictionOutput schema.
     Do NOT include markdown formatting, code blocks, or any explanatory text.
+    Keep your response concise to avoid truncation.
     The JSON must have these exact fields:
     - "products": array of objects with "formula", "name", "state" fields
-    - "effects": array of strings describing observable phenomena
+    - "effects": array of strings describing observable phenomena (keep descriptions short)
     - "state_change": string or null for overall state change
-    - "description": string explaining the reaction mechanism and outcome
+    - "description": string explaining the reaction mechanism and outcome (be concise)
     """
 
     reactants: str = dspy.InputField(
@@ -46,7 +52,6 @@ class ReactionPrediction(dspy.Signature):
     context: str = dspy.InputField(
         desc="A stringified JSON containing factual data about the reactants from PubChem. This is your primary source of truth."
     )
-    # The OutputField now directly references the Pydantic model for robust, typed output.
     reaction_prediction: ReactionPredictionOutput = dspy.OutputField(
         desc="A structured prediction of the reaction outcome, conforming to the Pydantic schema."
     )
@@ -57,11 +62,19 @@ class RAGReactionPredictor(dspy.Module):
 
     def __init__(self):
         super().__init__()
-        # ChainOfThought works seamlessly with Pydantic-based signatures.
-        self.generate_prediction = dspy.ChainOfThought(ReactionPrediction)
+        # Use the robust TypedCOTPredict for reliable Pydantic output.
+        # This module is expected to handle parsing, validation, and retries internally.
+        self.generate_prediction = TypedCOTPredict(
+            ReactionPrediction,
+            feedback_retries=settings.dspy_retries
+        )
 
-    def forward(self, reactants: str, environment: str, context: str) -> ReactionPredictionOutput:
-        """Executes the RAG pipeline."""
+    def forward(self, reactants: str, environment: str, context: str) -> dspy.Prediction:
+        """
+        Executes the RAG pipeline.
+        The TypedCOTPredict module is responsible for returning a valid Pydantic model
+        within the `reaction_prediction` attribute of the output Prediction object.
+        """
         return self.generate_prediction(
             reactants=reactants,
             environment=environment,
@@ -77,32 +90,32 @@ class ReactionEngineService:
         self.reaction_predictor = self._setup_dspy()
 
     def _setup_dspy(self) -> Optional[RAGReactionPredictor]:
-        """Configures DSPy with the appropriate language model."""
+        """Configures DSPy with the appropriate language model, following modern practices."""
         lm_provider = None
         if all([settings.azure_openai_key, settings.azure_openai_endpoint, settings.azure_openai_deployment_name]):
             try:
-                lm_provider = dspy.AzureOpenAI(
-                    api_base=settings.azure_openai_endpoint,
-                    api_version=settings.azure_openai_api_version,
-                    model=settings.azure_openai_deployment_name,
+                # CORRECTED: Use the generic dspy.LM class for Azure configuration as requested.
+                model_path = f"azure/{settings.azure_openai_deployment_name}"
+                lm_provider = dspy.LM(
+                    model_path,
                     api_key=settings.azure_openai_key,
-                    model_type="chat"
+                    api_base=settings.azure_openai_endpoint,
+                    api_version=settings.azure_openai_api_version
                 )
-                print("INFO: DSPy configured with Azure OpenAI.")
+                print(
+                    f"INFO: DSPy configured with dspy.LM for Azure model: {model_path}")
             except Exception as e:
                 print(f"WARNING: Azure OpenAI configuration failed: {e}")
 
         if lm_provider:
+            # Configure the global settings with the instantiated language model.
             dspy.settings.configure(lm=lm_provider)
-            # Enable better Pydantic model handling
-            dspy.settings.configure(parse_json=True)
-
             return RAGReactionPredictor()
 
         print("CRITICAL: No LLM provider configured. The engine will rely solely on physics-based fallbacks.")
         return None
 
-    def _generate_cache_key(self, chemicals: list[str], environment: str) -> str:
+    def _generate_cache_key(self, chemicals: List[str], environment: str) -> str:
         """Generates a deterministic SHA256 cache key from sorted inputs."""
         sorted_chemicals = sorted(c.strip().upper() for c in chemicals)
         key_data = {"chemicals": sorted_chemicals,
@@ -112,7 +125,7 @@ class ReactionEngineService:
 
     async def predict_reaction(
         self,
-        chemicals: list[str],
+        chemicals: List[str],
         environment: str,
         user_id: int,
         db: Session
@@ -136,7 +149,6 @@ class ReactionEngineService:
                 is_world_first=is_world_first
             )
 
-        # RAG generation now returns a dict from a Pydantic model.
         prediction_dict, from_llm = await self._generate_prediction_with_fallbacks(chemicals, environment)
 
         if from_llm:
@@ -144,8 +156,7 @@ class ReactionEngineService:
                 cache_key=cache_key,
                 reactants=chemicals,
                 environment=environment,
-                # Ensure products are dicts
-                products=[p.model_dump() for p in prediction_dict["products"]],
+                products=prediction_dict["products"],
                 effects=prediction_dict["effects"],
                 state_change=prediction_dict["state_change"],
                 description=prediction_dict["description"],
@@ -154,77 +165,56 @@ class ReactionEngineService:
             db.add(cache_entry)
             db.flush()
             is_world_first = await self._check_and_log_discoveries(prediction_dict["effects"], user_id, cache_entry.id, db)
-
         else:
             is_world_first = False
 
-        # Create the final response using the Pydantic models directly.
         return ReactionResponse(
             request_id=request_id,
-            products=prediction_dict["products"],
+            products=[ChemicalProduct(**p)
+                      for p in prediction_dict["products"]],
             effects=prediction_dict["effects"],
             state_change=prediction_dict["state_change"],
             description=prediction_dict["description"],
             is_world_first=is_world_first
         )
 
-    async def _generate_prediction_with_fallbacks(self, chemicals: list[str], environment: str) -> tuple[dict[str, object], bool]:
-        """Attempts prediction using DSPy RAG, with fallbacks. Returns a dictionary and if the prediction was from the LLM or the fallback."""
+    async def _generate_prediction_with_fallbacks(self, chemicals: List[str], environment: str) -> Tuple[Dict[str, Any], bool]:
+        """
+        Attempts prediction using the robust DSPy RAG module.
+        This method fully trusts the `TypedCOTPredict` module to handle all parsing,
+        validation, and retries. It expects either a valid Pydantic model or an exception.
+        """
         context_data = await self._get_chemical_context_with_retries(chemicals)
         context_str = json.dumps(context_data, indent=2)
-
-        # Convert the list of reactants to a comma-separated string
         reactants_str = ", ".join(chemicals)
-        if self.reaction_predictor:
-            for attempt in range(settings.dspy_retries):
-                try:
-                    result = self.reaction_predictor(
-                        reactants=reactants_str,
-                        environment=environment,
-                        context=context_str
-                    )
-                    prediction_model = result.reaction_prediction
-                    print(
-                        f"\n\n\nprediction_model type: {type(prediction_model)}")
-                    print(f"prediction_model: {prediction_model}")
-                    print(
-                        f"INFO: DSPy prediction and validation successful on attempt {attempt + 1}.")
-                    # Handle string output from LLM
-                    if isinstance(prediction_model, str):
-                        # Extract JSON from markdown-formatted string if needed
-                        cleaned_json = prediction_model.strip()
-                        if cleaned_json.startswith('```json'):
-                            cleaned_json = cleaned_json[7:]  # Remove ```json
-                        if cleaned_json.endswith('```'):
-                            cleaned_json = cleaned_json[:-3]  # Remove ```
 
-                        try:
-                            prediction_dict = json.loads(cleaned_json.strip())
-                        except json.JSONDecodeError as e:
-                            print(f"JSON parsing failed: {e}")
-                            print(f"Attempting to fix truncated JSON...")
-                            # Try to complete truncated JSON
-                            fixed_json = self._fix_truncated_json(
-                                cleaned_json.strip())
-                            prediction_dict = json.loads(fixed_json)
-                    else:
-                        prediction_dict = prediction_model.model_dump() if hasattr(
-                            prediction_model, "model_dump") else dict(prediction_model)
-                    return prediction_dict, True
-                except Exception as e:
-                    # This now catches LLM failures, network issues, or Pydantic validation errors from DSPy.
-                    print(
-                        f"ERROR: DSPy prediction or validation failed on attempt {attempt + 1}: {e}")
-                    await asyncio.sleep(1)
+        if self.reaction_predictor:
+            try:
+                result = self.reaction_predictor(
+                    reactants=reactants_str,
+                    environment=environment,
+                    context=context_str
+                )
+                prediction_model = result.reaction_prediction
+
+                if not isinstance(prediction_model, ReactionPredictionOutput):
+                    raise TypeError(
+                        f"DSPy module returned an unexpected type: {type(prediction_model)}")
+
+                print("INFO: DSPy prediction and validation successful.")
+                return prediction_model.model_dump(), True
+
+            except Exception as e:
+                print(
+                    f"ERROR: DSPy `TypedCOTPredict` module failed after all retries: {e}")
 
         print("INFO: Falling back to physics-based heuristic prediction.")
         fallback_data = self._get_physics_based_fallback(
             chemicals, environment)
-        # Ensure the fallback also conforms to the expected dictionary structure
         validated_fallback = ReactionPredictionOutput(**fallback_data)
         return validated_fallback.model_dump(), False
 
-    async def _get_chemical_context_with_retries(self, chemicals: list[str]) -> dict[str, object]:
+    async def _get_chemical_context_with_retries(self, chemicals: List[str]) -> Dict[str, Any]:
         """Retrieves chemical data from PubChem with exponential backoff."""
         for attempt in range(settings.pubchem_retries):
             try:
@@ -241,36 +231,7 @@ class ReactionEngineService:
             "CRITICAL: All PubChem API attempts failed. Proceeding with no factual context.")
         return {chem: {"error": "Failed to retrieve data"} for chem in chemicals}
 
-    def _fix_truncated_json(self, json_str: str) -> str:
-        """Attempts to fix truncated JSON by completing missing parts."""
-        # Count opening and closing brackets/braces
-        open_braces = json_str.count('{')
-        close_braces = json_str.count('}')
-        open_brackets = json_str.count('[')
-        close_brackets = json_str.count(']')
-
-        # Add missing closing brackets/braces
-        fixed_json = json_str
-        for _ in range(open_brackets - close_brackets):
-            fixed_json += ']'
-        for _ in range(open_braces - close_braces):
-            fixed_json += '}'
-
-        # If we have an unterminated string, try to close it
-        if fixed_json.count('"') % 2 != 0:
-            # Find the last quote and add a closing quote
-            last_quote_pos = fixed_json.rfind('"')
-            if last_quote_pos != -1:
-                # Check if we're in the middle of a string
-                if not fixed_json[last_quote_pos:].strip().startswith('"'):
-                    fixed_json += '"'
-
-        return fixed_json
-
-    # THIS METHOD IS NO LONGER NEEDED AND HAS BEEN REMOVED.
-    # def _validate_and_parse_prediction(self, json_output: str) -> Optional[Dict[str, Any]]:
-
-    def _get_physics_based_fallback(self, chemicals: list[str], environment: str) -> dict[str, object]:
+    def _get_physics_based_fallback(self, chemicals: List[str], environment: str) -> Dict[str, Any]:
         """Provides a deterministic, rule-based fallback prediction as a dictionary."""
         products = [{"formula": chem, "name": "Mixed Substance",
                      "state": "aqueous"} for chem in chemicals]
@@ -289,7 +250,7 @@ class ReactionEngineService:
 
     async def _check_and_log_discoveries(
         self,
-        effects: list[str],
+        effects: List[str],
         user_id: int,
         reaction_cache_id: int,
         db: Session
