@@ -131,7 +131,8 @@ class ReactionService:
     ) -> bool:
         """Checks if any effects are world-first discoveries and logs them."""
         is_world_first_overall = False
-        for effect_str in effects:
+        for effect_obj in effects:
+            effect_str = effect_obj.effect_type # Use the string representation of the effect
             existing_discovery = db.exec(
                 select(Discovery).where(Discovery.effect == effect_str)
             ).first()

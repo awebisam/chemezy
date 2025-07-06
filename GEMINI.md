@@ -35,14 +35,14 @@ Adhere to this directory structure. When I ask you to generate new files or comp
 │   │   ├── session.py            # Database session management
 │   │   └── base.py               # Base for all SQLModel models
 │   ├── models/
-│   │   ├── reaction.py           # SQLModel for ReactionCache, Discovery
+│   │   ├── reaction.py           # SQLModel for ReactionCache, Discovery (now includes state_of_product, explanation)
 │   │   └── user.py               # SQLModel for User
 │   ├── schemas/
-│   │   ├── reaction.py           # Pydantic schemas for reaction I/O
+│   │   ├── reaction.py           # Pydantic schemas for reaction I/O (now includes state_of_product, explanation, is_world_first)
 │   │   ├── token.py              # Pydantic schemas for JWT tokens
 │   │   └── user.py               # Pydantic schemas for user creation/display
 │   ├── services/
-│   │   ├── reaction_engine.py    # The core RAG and caching logic
+│   │   ├── reaction_service.py   # The core RAG, caching, and discovery logic
 │   │   ├── dspy_extended.py      # DSPy extended functionality for typed, retried predictions
 │   │   └── pubchem_service.py    # Logic for querying the PubChem API
 │   └── main.py                     # FastAPI app instantiation and middleware
@@ -94,8 +94,6 @@ This is the most critical component. All LLM interactions are **programmed** thr
 
 ## 6. Testing & Quality Assurance
 
--   **DO:** Use `pytest` for all tests.
--   **DO:** Write **unit tests** for services (e.g., `test_reaction_engine.py`). All external calls (PubChem API, DSPy/LLM) MUST be mocked using `unittest.mock`. We are testing our internal logic, not the external services.
--   **DO:** Write **integration tests** for API endpoints (e.g., `test_reactions.py`). Use FastAPI's `TestClient` to simulate real HTTP requests and assert status codes and response bodies.
--   **DO:** Maintain a minimum **test coverage of 85%**. Use `pytest-cov` to monitor this.
--   **DON'T:** Commit any code without corresponding tests. New features or bug fixes must include tests that validate the changes and prevent regressions.
+-   **DO:** Test all API endpoints using `curl` commands to ensure functionality and correct responses.
+-   **DO:** Manually verify the behavior of services and core logic by observing the API responses.
+-   **DO:** Ensure that all new features or bug fixes are thoroughly tested via `curl` commands before deployment.

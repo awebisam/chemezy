@@ -39,14 +39,14 @@ Adhere to this directory structure. When I ask you to generate new files or comp
 │   │   ├── session.py            # Database session management
 │   │   └── base.py               # Base for all SQLModel models
 │   ├── models/
-│   │   ├── reaction.py           # SQLModel for ReactionCache, Discovery
+│   │   ├── reaction.py           # SQLModel for ReactionCache, Discovery (now includes state_of_product, explanation)
 │   │   └── user.py               # SQLModel for User
 │   ├── schemas/
-│   │   ├── reaction.py           # Pydantic schemas for reaction I/O
+│   │   ├── reaction.py           # Pydantic schemas for reaction I/O (now includes state_of_product, explanation, is_world_first)
 │   │   ├── token.py              # Pydantic schemas for JWT tokens
 │   │   └── user.py               # Pydantic schemas for user creation/display
 │   ├── services/
-│   │   ├── reaction_engine.py    # The core RAG and caching logic
+│   │   ├── reaction_service.py   # The core RAG, caching, and discovery logic
 │   │   ├── dspy_extended.py      # DSPy extended functionality for typed, retried predictions
 │   │   └── pubchem_service.py    # Logic for querying the PubChem API
 │   └── main.py                     # FastAPI app instantiation and middleware

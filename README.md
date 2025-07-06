@@ -40,14 +40,14 @@ The engine never responds with a simple sentence. Its output is always a predict
     { "formula": "H2", "name": "Hydrogen Gas", "state": "gas" },  
     { "formula": "NaOH", "name": "Sodium Hydroxide", "state": "aqueous" }  
   ],  
+  "state_of_product": "gaseous mixture",
   "effects": [  
     "fizz",  
     "fire",  
     "color_change_red",  
     "rapid_temperature_increase"  
   ],  
-  "state_change": null,  
-  "description": "A vigorous exothermic reaction occurs, releasing flammable hydrogen gas which ignites.",  
+  "explanation": "A vigorous exothermic reaction occurs, releasing flammable hydrogen gas which ignites, resulting in a gaseous mixture of products.",
   "is_world_first": true  
 }
 ```
