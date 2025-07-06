@@ -7,6 +7,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.api.v1.api import api_router
+from app.core.dspy_manager import setup_dspy
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -36,6 +37,15 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Application startup event.
+    Initializes necessary components like the DSPy language model.
+    """
+    setup_dspy()
+
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
 
@@ -50,7 +60,8 @@ async def root():
         "docs": "/docs",
         "endpoints": {
             "authentication": "/api/v1/auth",
-            "reactions": "/api/v1/reactions"
+            "reactions": "/api/v1/reactions",
+            "chemicals": "/api/v1/chemicals"
         }
     }
 

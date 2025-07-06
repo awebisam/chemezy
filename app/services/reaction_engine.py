@@ -15,46 +15,7 @@ from app.schemas.reaction import ReactionResponse, ChemicalProduct, ReactionPred
 
 # Assuming dspy_extended provides a robust module for typed, retried predictions.
 from app.services.dspy_extended import TypedCOTPredict
-
-
-class ReactionPrediction(dspy.Signature):
-    """
-    You are a computational chemist AI. Your task is to predict the outcome of a chemical reaction
-    with scientific rigor, acting as the core intelligence for a chemistry simulation engine.
-
-    Given a set of reactants, environmental conditions, and factual data from the PubChem database,
-    you must perform a step-by-step analysis to generate a plausible and scientifically-grounded prediction.
-
-    Your reasoning process MUST follow these steps:
-    1.  Analyze Reactants: Examine the properties of each reactant from the provided `context`.
-    2.  Identify Potential Pathways: Consider possible reaction types (e.g., acid-base, redox).
-    3.  Evaluate Feasibility: Assess likelihood based on `environment` and chemical principles.
-    4.  Determine Products: Predict the most likely chemical products.
-    5.  Describe Phenomena: Detail observable `effects`.
-    6.  Synthesize Explanation: Write a clear `description` of the reaction.
-
-    CRITICAL: You must return ONLY a valid JSON object that matches the ReactionPredictionOutput schema.
-    Do NOT include markdown formatting, code blocks, or any explanatory text.
-    Keep your response concise to avoid truncation.
-    The JSON must have these exact fields:
-    - "products": array of objects with "formula", "name", "state" fields
-    - "effects": array of strings describing observable phenomena (keep descriptions short)
-    - "state_change": string or null for overall state change
-    - "description": string explaining the reaction mechanism and outcome (be concise)
-    """
-
-    reactants: str = dspy.InputField(
-        desc="A comma-separated string of chemical formulas for the reacting substances."
-    )
-    environment: str = dspy.InputField(
-        desc="A string describing the physical conditions of the reaction."
-    )
-    context: str = dspy.InputField(
-        desc="A stringified JSON containing factual data about the reactants from PubChem. This is your primary source of truth."
-    )
-    reaction_prediction: ReactionPredictionOutput = dspy.OutputField(
-        desc="A structured prediction of the reaction outcome, conforming to the Pydantic schema."
-    )
+from app.services.dspy_signatures import ReactionPrediction
 
 
 class RAGReactionPredictor(dspy.Module):
@@ -88,33 +49,11 @@ class ReactionEngineService:
 
     def __init__(self):
         self.pubchem_service = PubChemService()
-        self.reaction_predictor = self._setup_dspy()
-
-    def _setup_dspy(self) -> Optional[RAGReactionPredictor]:
-        """Configures DSPy with the appropriate language model, following modern practices."""
-        lm_provider = None
-        if all([settings.azure_openai_key, settings.azure_openai_endpoint, settings.azure_openai_deployment_name]):
-            try:
-                # CORRECTED: Use the generic dspy.LM class for Azure configuration as requested.
-                model_path = f"azure/{settings.azure_openai_deployment_name}"
-                lm_provider = dspy.LM(
-                    model_path,
-                    api_key=settings.azure_openai_key,
-                    api_base=settings.azure_openai_endpoint,
-                    api_version=settings.azure_openai_api_version
-                )
-                print(
-                    f"INFO: DSPy configured with dspy.LM for Azure model: {model_path}")
-            except Exception as e:
-                print(f"WARNING: Azure OpenAI configuration failed: {e}")
-
-        if lm_provider:
-            # Configure the global settings with the instantiated language model.
-            dspy.settings.configure(lm=lm_provider)
-            return RAGReactionPredictor()
-
-        print("CRITICAL: No LLM provider configured. The engine will rely solely on physics-based fallbacks.")
-        return None
+        if settings.dspy_enabled:
+            self.reaction_predictor: Optional[RAGReactionPredictor] = RAGReactionPredictor(
+            )
+        else:
+            self.reaction_predictor = None
 
     def _generate_cache_key(self, chemicals: List[str], environment: str) -> str:
         """Generates a deterministic SHA256 cache key from sorted inputs."""

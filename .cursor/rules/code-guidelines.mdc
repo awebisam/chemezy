@@ -1,6 +1,6 @@
 ---
 description: For project generations and background agents.
-alwaysApply: false
+alwaysApply: true
 ---
 # Cursor Rules: The Chemezy Backend Engine
 
@@ -47,6 +47,7 @@ Adhere to this directory structure. When I ask you to generate new files or comp
 │   │   └── user.py               # Pydantic schemas for user creation/display
 │   ├── services/
 │   │   ├── reaction_engine.py    # The core RAG and caching logic
+│   │   ├── dspy_extended.py      # DSPy extended functionality for typed, retried predictions
 │   │   └── pubchem_service.py    # Logic for querying the PubChem API
 │   └── main.py                     # FastAPI app instantiation and middleware
 ├── tests/
@@ -81,25 +82,6 @@ This is the most critical component. All LLM interactions are **programmed** thr
     1.  **Retrieve:** Use `dspy.Retrieve` to query the PubChem API via a dedicated `PubChemService`. The goal is to fetch factual data about the input chemicals.
     2.  **Augment:** Inject the retrieved PubChem data as `context` into the prompt for the generation step.
     3.  **Generate:** Use `dspy.ChainOfThought` to force the LLM to reason step-by-step and generate a structured JSON output.
--   **DO:** Use a DSPy Signature that enforces the precise output schema. The prompt must explicitly instruct the LLM to use the provided factual context and output **only** a valid JSON object matching the specified structure.
-    ```python
-    class ReactionPrediction(dspy.Signature):
-        """Predicts the outcome of a chemical reaction based on provided context."""
-
-        reactants = dspy.InputField(desc="List of chemical formulas reacting, e.g., ['H2O', 'NaCl']")
-        environment = dspy.InputField(desc="The environmental conditions, e.g., 'Earth (Normal)'")
-        context = dspy.InputField(desc="Factual data from PubChem about reactants.")
-        
-        structured_json_output = dspy.OutputField(
-            desc="A single, valid JSON object with no extra text or explanations.",
-            prefix='''{
-                "products": [{"formula": str, "name": str, "state": str}],
-                "effects": [str],
-                "state_change": str | None,
-                "description": str
-            }'''
-        )
-    ```
 -   **DON'T:** Make a direct, unstructured call to an LLM (e.g., using the `openai` library directly for generation). All interactions MUST be orchestrated via a compiled DSPy program.
 -   **DON'T:** Trust the LLM's internal training data for chemical facts. Its reasoning must be grounded in the `context` retrieved from PubChem.
 

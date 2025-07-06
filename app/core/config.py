@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     # Database settings
     database_url: str = "sqlite:///./chemezy.db"
 
+    dspy_enabled: bool = True
+
     # Security settings (REQUIRED for production)
     secret_key: str  # Must be set in environment - no default for security
     algorithm: str = "HS256"
