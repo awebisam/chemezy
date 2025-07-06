@@ -12,6 +12,7 @@ from app.core.dspy_manager import setup_dspy
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
@@ -24,14 +25,17 @@ app = FastAPI(
     }
 )
 
-# Configure rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Disable rate limiting for tests
+if settings.testing:
+    app.dependency_overrides[limiter.limit] = lambda: None
 
 # Add CORS middleware - locked down for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],

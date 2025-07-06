@@ -29,9 +29,11 @@ def client_fixture(session: Session):
         return session
 
     app.dependency_overrides[get_session] = get_session_override
+    settings.testing = True # Enable testing mode
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+    settings.testing = False # Disable testing mode
 
 
 @pytest.fixture(name="test_user")
@@ -53,7 +55,8 @@ def auth_headers_fixture(client: TestClient, test_user: User):
     """Get authentication headers for test user."""
     response = client.post(
         "/api/v1/auth/token",
-        data={"username": "testuser", "password": "testpassword"}
+        data={"username": test_user.username, "password": "testpassword"}
     )
+    assert response.status_code == 200, f"Failed to get access token: {response.json()}"
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

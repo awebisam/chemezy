@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # CORS settings
     # Add your Unity client domains
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    allowed_origins: list[str] = ["*"]
 
     # PubChem API settings
     pubchem_base_url: str = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # Application settings
     app_name: str = "Chemezy Backend Engine"
     debug: bool = False
+    testing: bool = False
 
     # Rate limiting (optional - for future enhancement)
     redis_url: Optional[str] = None

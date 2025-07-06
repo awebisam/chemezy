@@ -25,7 +25,7 @@ def chemical_service_with_generator():
         mock_generator_instance = MagicMock()
         MockGenerator.return_value = mock_generator_instance
 
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         yield service, mock_generator_instance
 
 
@@ -64,7 +64,7 @@ async def test_create_chemical_success(chemical_service_with_generator, mock_db)
 async def test_create_chemical_already_exists(mock_db):
     """Test creating a chemical that already exists."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         existing_chemical = Chemical(molecular_formula="H2O", common_name="Water",
                                      state_of_matter=StateOfMatter.LIQUID, color="Transparent", density=1.0)
         mock_db.exec.return_value.first.return_value = existing_chemical
@@ -88,7 +88,7 @@ async def test_create_chemical_llm_fails(chemical_service_with_generator, mock_d
 async def test_create_chemical_dspy_not_configured(mock_db):
     """Test that creating a chemical fails if DSPy is not configured."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         mock_db.exec.return_value.first.return_value = None
 
         with pytest.raises(RuntimeError, match="Chemical property generator is not configured."):
@@ -99,7 +99,7 @@ async def test_create_chemical_dspy_not_configured(mock_db):
 async def test_get_chemical(mock_db):
     """Test retrieving a single chemical by ID."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         expected_chemical = Chemical(id=1, molecular_formula="NaCl", common_name="Salt",
                                      state_of_matter=StateOfMatter.SOLID, color="White", density=2.17)
         mock_db.get.return_value = expected_chemical
@@ -114,7 +114,7 @@ async def test_get_chemical(mock_db):
 async def test_get_all_chemicals(mock_db):
     """Test retrieving a paginated list of all chemicals."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         chemicals_list = [
             Chemical(id=1, molecular_formula="H2O", common_name="Water",
                      state_of_matter=StateOfMatter.LIQUID, color="Transparent", density=1.0),
@@ -140,7 +140,7 @@ async def test_get_all_chemicals(mock_db):
 async def test_delete_chemical(mock_db):
     """Test successfully deleting a chemical."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
         chemical_to_delete = Chemical(id=1, molecular_formula="H2O", common_name="Water",
                                       state_of_matter=StateOfMatter.LIQUID, color="Transparent", density=1.0)
 
@@ -160,7 +160,7 @@ async def test_delete_chemical(mock_db):
 async def test_delete_chemical_not_found(mock_db):
     """Test attempting to delete a chemical that does not exist."""
     with patch("app.services.chemical_service.is_dspy_configured", return_value=False):
-        service = ChemicalService()
+        service = ChemicalService(db=mock_db)
 
         with patch.object(service, 'get', new_callable=AsyncMock) as mock_get:
             mock_get.return_value = None

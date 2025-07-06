@@ -56,7 +56,9 @@ class PredictReactionProductsAndEffects(dspy.Signature):
     Do NOT include markdown formatting, code blocks, or any explanatory text.
     The JSON must have these exact fields:
     - "products": array of objects with "molecular_formula" and "quantity" fields.
+    - "state_of_product": string describing the overall state of the product (e.g., "gaseous mixture", "solid precipitate", "aqueous solution").
     - "effects": array of structured `Effect` objects.
+    - "explanation": string providing a concise, scientifically accurate explanation of the reaction, suitable for a "tips" section.
     """
 
     reactants_data: str = dspy.InputField(

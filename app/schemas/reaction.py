@@ -24,8 +24,13 @@ class ProductOutputDSPy(BaseModel):
 
 class ReactionPrediction(BaseModel):
     products: List[ProductOutput]
+    state_of_product: str
     effects: List[Effect]
+    explanation: str
+    is_world_first: bool = False
 
 class ReactionPredictionDSPyOutput(BaseModel):
     products: List[ProductOutputDSPy]
+    state_of_product: str
     effects: List[Effect]
+    explanation: str

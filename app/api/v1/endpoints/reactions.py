@@ -30,7 +30,7 @@ async def predict_reaction(
 
     try:
         reaction_service = ReactionService(db)
-        result = await reaction_service.predict_reaction(request)
+        result = await reaction_service.predict_reaction(request, user_id=current_user.id)
         db.commit()
         return result
     except Exception as e:
@@ -39,3 +39,26 @@ async def predict_reaction(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing reaction: {str(e)}"
         )
+
+@router.get("/cache", response_model=list[ReactionPrediction])
+async def get_reaction_cache(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Retrieve the user's reaction cache.
+    """
+    reaction_service = ReactionService(db)
+    return reaction_service.get_user_reaction_cache(user_id=current_user.id)
+
+@router.get("/stats")
+async def get_user_reaction_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Retrieve statistics about the user's reactions and discoveries.
+    """
+    reaction_service = ReactionService(db)
+    stats = reaction_service.get_user_reaction_stats(user_id=current_user.id)
+    return stats

@@ -1,11 +1,15 @@
 import json
+import json
+import hashlib
+from datetime import datetime
 from typing import List, Dict, Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 import dspy
 
 from app.core.config import settings
 from app.models.chemical import Chemical
+from app.models.reaction import ReactionCache, Discovery
 from app.schemas.reaction import ReactionRequest, ReactionPrediction, ProductOutput, ReactionPredictionDSPyOutput
 from app.schemas.chemical import ChemicalCreate
 from app.services.chemical_service import ChemicalService
@@ -36,9 +40,9 @@ class ReactionService:
             self.reaction_predictor = None
 
     async def predict_reaction(
-        self, request: ReactionRequest
+        self, request: ReactionRequest, user_id: int
     ) -> ReactionPrediction:
-        """Predicts the outcome of a chemical reaction."""
+        """Predicts the outcome of a chemical reaction, utilizing cache and discovery."""
         reactants = self._get_reactants_from_db(request.reactants)
         reactants_data_str = self._serialize_reactants(reactants, request.reactants)
 
@@ -48,19 +52,103 @@ class ReactionService:
             if catalyst:
                 catalyst_data_str = json.dumps(catalyst.model_dump())
 
-        if not self.reaction_predictor:
-            return self._fallback_prediction(reactants)
+        # Generate a cache key
+        cache_key = self._generate_cache_key(reactants_data_str, request.environment.value, catalyst_data_str)
 
-        prediction = self.reaction_predictor(
+        # Check cache first
+        cached_reaction = self.db.exec(
+            select(ReactionCache).where(ReactionCache.cache_key == cache_key)
+        ).first()
+
+        if cached_reaction:
+            # Process cached result
+            prediction = ReactionPrediction(
+                products=cached_reaction.products,
+                effects=cached_reaction.effects,
+                state_of_product=cached_reaction.state_of_product,
+                explanation=cached_reaction.explanation,
+                is_world_first=False # Assume not world first if from cache, will be updated by _check_and_log_discoveries
+            )
+            is_world_first = await self._check_and_log_discoveries(
+                prediction.effects, user_id, cached_reaction.id, self.db
+            )
+            prediction.is_world_first = is_world_first
+            return prediction
+
+        # If not in cache, predict using DSPy
+        if not self.reaction_predictor:
+            # Fallback prediction for non-configured DSPy
+            fallback_pred = self._fallback_prediction(reactants)
+            # No cache for fallback, so no world-first check here
+            return fallback_pred
+
+        prediction_dspy_output = self.reaction_predictor(
             reactants_data=reactants_data_str, 
             environment=request.environment.value,
             catalyst_data=catalyst_data_str
-        )
+        ).prediction
         
         validated_prediction = await self._process_and_validate_prediction(
-            prediction.prediction
+            prediction_dspy_output
         )
+
+        # Save new prediction to cache
+        new_reaction_cache = ReactionCache(
+            cache_key=cache_key,
+            reactants=[r.molecular_formula for r in reactants],
+            environment=request.environment.value,
+            products=[p.model_dump() for p in validated_prediction.products],
+            effects=[effect.model_dump() for effect in validated_prediction.effects],
+            state_of_product=validated_prediction.state_of_product,
+            explanation=validated_prediction.explanation,
+            user_id=user_id
+        )
+        self.db.add(new_reaction_cache)
+        self.db.commit()
+        self.db.refresh(new_reaction_cache)
+
+        # Check and log discoveries for newly generated reaction
+        is_world_first = await self._check_and_log_discoveries(
+            validated_prediction.effects, user_id, new_reaction_cache.id, self.db
+        )
+        validated_prediction.is_world_first = is_world_first
+        
         return validated_prediction
+
+    def _generate_cache_key(self, reactants_data_str: str, environment: str, catalyst_data_str: str) -> str:
+        """Generates a deterministic cache key for a reaction."""
+        # Sort reactants data to ensure consistent key generation
+        sorted_reactants_data = json.dumps(json.loads(reactants_data_str), sort_keys=True)
+        
+        # Combine all relevant parameters into a single string
+        key_string = f"{sorted_reactants_data}-{environment}-{catalyst_data_str}"
+        
+        # Hash the string to create a fixed-size cache key
+        return hashlib.sha256(key_string.encode('utf-8')).hexdigest()
+
+    async def _check_and_log_discoveries(
+        self, effects: List[str], user_id: int, reaction_cache_id: int, db: Session
+    ) -> bool:
+        """Checks if any effects are world-first discoveries and logs them."""
+        is_world_first_overall = False
+        for effect_str in effects:
+            existing_discovery = db.exec(
+                select(Discovery).where(Discovery.effect == effect_str)
+            ).first()
+
+            if not existing_discovery:
+                new_discovery = Discovery(
+                    effect=effect_str,
+                    discovered_by=user_id,
+                    reaction_cache_id=reaction_cache_id
+                )
+                db.add(new_discovery)
+                is_world_first_overall = True
+        
+        if is_world_first_overall:
+            db.commit()
+        
+        return is_world_first_overall
 
     def _get_reactants_from_db(self, reactant_inputs: List[Dict[str, Any]]) -> List[Chemical]:
         """Fetches chemical data from the database for the given reactants."""
@@ -103,7 +191,12 @@ class ReactionService:
                 )
             )
         
-        return ReactionPrediction(products=processed_products, effects=prediction_dspy_output.effects)
+        return ReactionPrediction(
+            products=processed_products, 
+            effects=prediction_dspy_output.effects,
+            state_of_product=prediction_dspy_output.state_of_product,
+            explanation=prediction_dspy_output.explanation
+        )
 
     def _fallback_prediction(self, reactants: List[Chemical]) -> ReactionPrediction:
         """Provides a fallback prediction when the DSPy model is disabled."""
@@ -114,4 +207,25 @@ class ReactionService:
                 quantity=1
             ) for r in reactants
         ]
-        return ReactionPrediction(products=products, effects=[])
+        return ReactionPrediction(products=products, effects=[], state_of_product="unknown", explanation="Fallback prediction.")
+
+    def get_user_reaction_cache(self, user_id: int) -> List[ReactionCache]:
+        """Retrieves all cached reactions for a given user."""
+        return self.db.exec(
+            select(ReactionCache).where(ReactionCache.user_id == user_id)
+        ).all()
+
+    def get_user_reaction_stats(self, user_id: int) -> Dict[str, Any]:
+        """Retrieves statistics about a user's reactions and discoveries."""
+        total_reactions = self.db.exec(
+            select(func.count(ReactionCache.id)).where(ReactionCache.user_id == user_id)
+        ).one()
+
+        total_discoveries = self.db.exec(
+            select(func.count(Discovery.id)).where(Discovery.discovered_by == user_id)
+        ).one()
+
+        return {
+            "total_reactions": total_reactions,
+            "total_discoveries": total_discoveries
+        }
