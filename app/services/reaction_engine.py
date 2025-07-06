@@ -66,6 +66,7 @@ class RAGReactionPredictor(dspy.Module):
         # This module is expected to handle parsing, validation, and retries internally.
         self.generate_prediction = TypedCOTPredict(
             ReactionPrediction,
+            reflect=True,
             feedback_retries=settings.dspy_retries
         )
 
