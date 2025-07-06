@@ -1,8 +1,7 @@
 import dspy
-from typing import Dict, Any
+from typing import Dict, Any, List
 from app.models.chemical import StateOfMatter
-from app.schemas.reaction import ReactionPredictionOutput
-
+from app.schemas.reaction import ReactionPrediction, ReactionPredictionDSPyOutput
 
 class GenerateChemicalProperties(dspy.Signature):
     """
@@ -38,42 +37,38 @@ class GenerateChemicalProperties(dspy.Signature):
         desc="A dictionary of additional scientific properties, e.g., {{'melting_point': 0.0, 'boiling_point': 100.0}}."
     )
 
-
-class ReactionPrediction(dspy.Signature):
+class PredictReactionProductsAndEffects(dspy.Signature):
     """
-    You are a computational chemist AI. Your task is to predict the outcome of a chemical reaction
-    with scientific rigor, acting as the core intelligence for a chemistry simulation engine.
+    Predicts the products and observable effects of a chemical reaction.
 
-    Given a set of reactants, environmental conditions, and factual data from the PubChem database,
-    you must perform a step-by-step analysis to generate a plausible and scientifically-grounded prediction.
+    You are a computational chemist AI. Your task is to predict the outcome of a chemical reaction with scientific rigor, acting as the core intelligence for a chemistry simulation engine.
+
+    Given a set of reactants, an environment, and an optional catalyst, you must perform a step-by-step analysis to generate a plausible and scientifically-grounded prediction.
 
     Your reasoning process MUST follow these steps:
-    1.  Analyze Reactants: Examine the properties of each reactant from the provided `context`.
-    2.  Identify Potential Pathways: Consider possible reaction types (e.g., acid-base, redox).
-    3.  Evaluate Feasibility: Assess likelihood based on `environment` and chemical principles.
-    4.  Determine Products: Predict the most likely chemical products.
-    5.  Describe Phenomena: Detail observable `effects`.
-    6.  Synthesize Explanation: Write a clear `description` of the reaction.
+    1.  Analyze Reactants and Catalyst: Examine the properties of each reactant from `reactants_data` and the catalyst from `catalyst_data`.
+    2.  Consider Environment: Factor in the `environment` conditions.
+    3.  Identify Potential Pathways: Consider how the catalyst might influence reaction types (e.g., by lowering activation energy).
+    4.  Determine Products: Predict the most likely chemical products. The catalyst itself should not be consumed or appear as a product.
+    5.  Describe Phenomena: Detail the observable `effects`, noting any changes due to the catalyst (e.g., increased reaction rate leading to more intense effects).
 
-    CRITICAL: You must return ONLY a valid JSON object that matches the ReactionPredictionOutput schema.
+    CRITICAL: You must return ONLY a valid JSON object that matches the ReactionPrediction schema.
     Do NOT include markdown formatting, code blocks, or any explanatory text.
-    Keep your response concise to avoid truncation.
     The JSON must have these exact fields:
-    - "products": array of objects with "formula", "name", "state" fields
-    - "effects": array of strings describing observable phenomena (keep descriptions short)
-    - "state_change": string or null for overall state change
-    - "description": string explaining the reaction mechanism and outcome (be concise)
+    - "products": array of objects with "molecular_formula" and "quantity" fields.
+    - "effects": array of structured `Effect` objects.
     """
 
-    reactants: str = dspy.InputField(
-        desc="A comma-separated string of chemical formulas for the reacting substances."
+    reactants_data: str = dspy.InputField(
+        desc="A JSON string representing a list of reactant chemicals, including their properties."
     )
     environment: str = dspy.InputField(
-        desc="A string describing the physical conditions of the reaction."
+        desc="A string describing the physical conditions of the reaction. Must be one of: 'Earth (Normal)', 'Vacuum', 'Pure Oxygen', 'Inert Gas', 'Acidic Environment', 'Basic Environment'."
     )
-    context: str = dspy.InputField(
-        desc="A stringified JSON containing factual data about the reactants from PubChem. This is your primary source of truth."
+    catalyst_data: str = dspy.InputField(
+        desc="An optional JSON string representing the catalyst chemical, including its properties."
     )
-    reaction_prediction: ReactionPredictionOutput = dspy.OutputField(
+
+    prediction: ReactionPredictionDSPyOutput = dspy.OutputField(
         desc="A structured prediction of the reaction outcome, conforming to the Pydantic schema."
     )

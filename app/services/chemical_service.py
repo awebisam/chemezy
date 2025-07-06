@@ -33,44 +33,45 @@ class ChemicalPropertyGenerator(dspy.Module):
 class ChemicalService:
     """Service for managing chemicals."""
 
-    def __init__(self):
+    def __init__(self, db: Session):
+        self.db = db
         if is_dspy_configured():
             self.property_generator: Optional[ChemicalPropertyGenerator] = ChemicalPropertyGenerator(
             )
         else:
             self.property_generator = None
 
-    async def get(self, db: Session, chemical_id: int) -> Optional[Chemical]:
+    async def get(self, chemical_id: int) -> Optional[Chemical]:
         """Get a chemical by its ID."""
-        return db.get(Chemical, chemical_id)
+        return self.db.get(Chemical, chemical_id)
 
-    async def get_by_molecular_formula(self, db: Session, molecular_formula: str) -> Optional[Chemical]:
+    async def get_by_molecular_formula(self, molecular_formula: str) -> Optional[Chemical]:
         """Get a chemical by its molecular formula."""
         statement = select(Chemical).where(
             Chemical.molecular_formula == molecular_formula)
-        return db.exec(statement).first()
+        return self.db.exec(statement).first()
 
-    async def get_all(self, db: Session, skip: int = 0, limit: int = 100) -> Tuple[List[Chemical], int]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Chemical], int]:
         """Get all chemicals with pagination."""
         statement = select(Chemical).offset(skip).limit(limit)
         count_statement = select(func.count(Chemical.id))
 
-        results = db.exec(statement).all()
-        total = db.exec(count_statement).one()
+        results = self.db.exec(statement).all()
+        total = self.db.exec(count_statement).one()
 
         return results, total
 
-    async def delete(self, db: Session, chemical_id: int) -> Optional[Chemical]:
+    async def delete(self, chemical_id: int) -> Optional[Chemical]:
         """Delete a chemical."""
-        chemical = await self.get(db, chemical_id)
+        chemical = await self.get(chemical_id)
         if chemical:
-            db.delete(chemical)
-            db.commit()
+            self.db.delete(chemical)
+            self.db.commit()
         return chemical
 
-    async def create(self, db: Session, chemical_in: ChemicalCreate) -> Chemical:
+    async def create_chemical(self, chemical_in: ChemicalCreate) -> Chemical:
         """Create a new chemical."""
-        existing_chemical = await self.get_by_molecular_formula(db, chemical_in.molecular_formula)
+        existing_chemical = await self.get_by_molecular_formula(chemical_in.molecular_formula)
         if existing_chemical:
             raise ValueError(
                 f"Chemical with formula {chemical_in.molecular_formula} already exists.")
@@ -101,7 +102,7 @@ class ChemicalService:
             **generated_data.model_dump()
         )
 
-        db.add(db_chemical)
-        db.commit()
-        db.refresh(db_chemical)
+        self.db.add(db_chemical)
+        self.db.commit()
+        self.db.refresh(db_chemical)
         return db_chemical
