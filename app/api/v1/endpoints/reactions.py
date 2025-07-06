@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
@@ -7,8 +6,8 @@ from app.models.user import User
 from app.models.reaction import ReactionCache, Discovery
 from app.services.reaction_engine import ReactionEngineService
 from app.schemas.reaction import (
-    ReactionRequest, 
-    ReactionResponse, 
+    ReactionRequest,
+    ReactionResponse,
     ReactionCacheSchema,
     DiscoverySchema
 )
@@ -26,7 +25,7 @@ async def predict_reaction(
 ):
     """
     Process a chemical reaction prediction request.
-    
+
     This is the core endpoint that receives chemical formulas and environmental
     conditions, then returns a structured prediction of the reaction outcome.
     """
@@ -35,7 +34,7 @@ async def predict_reaction(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one chemical must be provided"
         )
-    
+
     try:
         result = await reaction_engine.predict_reaction(
             chemicals=request.chemicals,
@@ -43,11 +42,11 @@ async def predict_reaction(
             user_id=current_user.id,
             db=db
         )
-        
+
         # Commit the transaction here (atomic operation)
         db.commit()
         return result
-        
+
     except Exception as e:
         # Rollback on any error
         db.rollback()
@@ -57,7 +56,7 @@ async def predict_reaction(
         )
 
 
-@router.get("/cache", response_model=List[ReactionCacheSchema])
+@router.get("/cache", response_model=list[ReactionCacheSchema])
 async def get_reaction_cache(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session),
@@ -72,7 +71,7 @@ async def get_reaction_cache(
         .offset(offset)
         .limit(limit)
     ).all()
-    
+
     return [ReactionCacheSchema.from_orm(reaction) for reaction in reactions]
 
 
@@ -88,17 +87,17 @@ async def get_reaction_by_id(
         .where(ReactionCache.id == reaction_id)
         .where(ReactionCache.user_id == current_user.id)
     ).first()
-    
+
     if not reaction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reaction not found"
         )
-    
+
     return ReactionCacheSchema.from_orm(reaction)
 
 
-@router.get("/discoveries", response_model=List[DiscoverySchema])
+@router.get("/discoveries", response_model=list[DiscoverySchema])
 async def get_user_discoveries(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session),
@@ -113,11 +112,11 @@ async def get_user_discoveries(
         .offset(offset)
         .limit(limit)
     ).all()
-    
+
     return [DiscoverySchema.from_orm(discovery) for discovery in discoveries]
 
 
-@router.get("/discoveries/all", response_model=List[DiscoverySchema])
+@router.get("/discoveries/all", response_model=list[DiscoverySchema])
 async def get_all_discoveries(
     db: Session = Depends(get_session),
     limit: int = 100,
@@ -130,7 +129,7 @@ async def get_all_discoveries(
         .offset(offset)
         .limit(limit)
     ).all()
-    
+
     return [DiscoverySchema.from_orm(discovery) for discovery in discoveries]
 
 
@@ -144,12 +143,12 @@ async def get_user_stats(
         select(ReactionCache)
         .where(ReactionCache.user_id == current_user.id)
     ).all()
-    
+
     total_discoveries = db.exec(
         select(Discovery)
         .where(Discovery.discovered_by == current_user.id)
     ).all()
-    
+
     return {
         "user_id": current_user.id,
         "username": current_user.username,

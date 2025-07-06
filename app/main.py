@@ -17,7 +17,10 @@ app = FastAPI(
     description="The source code of reality for the Chemezy game universe",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    swagger_ui_init_oauth={
+        "tokenUrl": "/api/v1/auth/token",
+    }
 )
 
 # Configure rate limiting
