@@ -129,19 +129,8 @@ class ReactionEngineService:
                 )
                 print("INFO: DSPy configured with Azure OpenAI.")
             except Exception as e:
-                print(f"WARNING: Azure OpenAI configuration failed: {e}. Trying standard OpenAI.")
+                print(f"WARNING: Azure OpenAI configuration failed: {e}")
 
-        # Priority 2: Standard OpenAI
-        if not lm_provider and settings.openai_api_key:
-            try:
-                lm_provider = dspy.OpenAI(
-                    model=settings.openai_model,
-                    api_key=settings.openai_api_key
-                )
-                print("INFO: DSPy configured with standard OpenAI.")
-            except Exception as e:
-                print(f"WARNING: Standard OpenAI configuration failed: {e}.")
-        
         if lm_provider:
             dspy.settings.configure(lm=lm_provider)
             return RAGReactionPredictor()

@@ -15,7 +15,12 @@ cp .env.example .env
 
 # Edit .env file - REQUIRED SETTINGS:
 # SECRET_KEY=your-secure-secret-key-here  (generate with: openssl rand -hex 32)
-# OPENAI_API_KEY=your-openai-api-key-here (optional, but recommended)
+# AZURE_OPENAI_KEY=your-azure-openai-api-key-here (required)
+# AZURE_OPENAI_ENDPOINT=your-azure-openai-endpoint-here (required)
+# AZURE_OPENAI_API_VERSION=your-azure-openai-api-version-here (required)
+# AZURE_OPENAI_DEPLOYMENT_NAME=your-azure-openai-deployment-name-here (required)
+# AZURE_OPENAI_MODEL_NAME=your-azure-openai-model-name-here (required)
+# ALLOWED_ORIGINS=your-allowed-origins-here (required)
 ```
 
 ### 2. Start Database
@@ -116,8 +121,12 @@ Edit `.env` file for:
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://chemezy:chemezy@localhost/chemezy` |
 | `SECRET_KEY` | JWT signing secret | Generate with `openssl rand -hex 32` |
-| `OPENAI_API_KEY` | OpenAI API key for DSPy | Optional (fallback prediction used) |
-| `OPENAI_MODEL` | OpenAI model to use | `gpt-3.5-turbo` |
+| `AZURE_OPENAI_KEY` | Azure OpenAI API key for DSPy | Required |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint | Required |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version | Required |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Azure OpenAI deployment name | Required |
+| `AZURE_OPENAI_MODEL_NAME` | Azure OpenAI model name | Required |
+| `ALLOWED_ORIGINS` | Allowed origins for CORS | Required |
 | `DEBUG` | Debug mode | `false` |
 
 ## 📊 Example API Response

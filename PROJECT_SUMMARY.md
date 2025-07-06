@@ -119,7 +119,12 @@ cp .env.example .env
 # Edit .env with your settings:
 # - DATABASE_URL
 # - SECRET_KEY (generate a secure one)
-# - OPENAI_API_KEY (for full DSPy functionality)
+# - AZURE_OPENAI_KEY (for full DSPy functionality)
+# - AZURE_OPENAI_ENDPOINT (Azure OpenAI endpoint)
+# - AZURE_OPENAI_API_VERSION (Azure OpenAI API version)
+# - AZURE_OPENAI_DEPLOYMENT_NAME (Azure OpenAI deployment name)
+# - AZURE_OPENAI_MODEL_NAME (Azure OpenAI model name)
+# - ALLOWED_ORIGINS (list of allowed origins)
 ```
 
 ### 2. Database Setup
@@ -232,7 +237,7 @@ The application is production-ready with:
 
 ## Next Steps
 
-1. **Set up your OpenAI API key** in `.env` for full DSPy functionality
+1. **Set up your Azure OpenAI API key** in `.env` for full DSPy functionality
 2. **Configure production database** connection
 3. **Generate a secure SECRET_KEY** for JWT tokens
 4. **Set up monitoring and logging** for production deployment
