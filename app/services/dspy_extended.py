@@ -39,7 +39,7 @@ class TypedCOTPredict(dspy.Module):
 
         if isinstance(dspy.settings.lm, dspy.LM):
             desc = "${reasoning}"
-        elif dspy.settings.experimental:
+        elif hasattr(dspy.settings, "experimental") and dspy.settings.experimental:
             desc = "${produce the output fields}. We ..."
         else:
             desc = f"${{produce the {last_key}}}. We ..."
