@@ -43,9 +43,14 @@ async def predict_reaction(
             user_id=current_user.id,
             db=db
         )
+        
+        # Commit the transaction here (atomic operation)
+        db.commit()
         return result
         
     except Exception as e:
+        # Rollback on any error
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing reaction: {str(e)}"

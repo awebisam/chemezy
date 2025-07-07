@@ -1,7 +1,9 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session, select
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.config import settings
 from app.core.security import (
@@ -17,6 +19,9 @@ from app.schemas.token import Token
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Rate limiter for auth endpoints
+limiter = Limiter(key_func=get_remote_address)
 
 
 async def get_current_user(
@@ -38,7 +43,9 @@ async def get_current_user(
 
 
 @router.post("/register", response_model=UserResponseSchema)
+@limiter.limit("5/minute")  # Limit registration attempts
 async def register_user(
+    request: Request,
     user_data: UserCreateSchema,
     db: Session = Depends(get_session)
 ):
@@ -80,7 +87,9 @@ async def register_user(
 
 
 @router.post("/token", response_model=Token)
+@limiter.limit("10/minute")  # Limit login attempts to prevent brute force
 async def login_for_access_token(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_session)
 ):
