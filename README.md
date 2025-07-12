@@ -88,8 +88,7 @@ Want to get me up and running? Here's the super-fast version:
 2.  **Environment:** Copy `.env.example` to `.env` and fill in the blanks (especially `SECRET_KEY` – make it long and random, like my thoughts after a particularly complex reaction).
 3.  **Database:**
     ```bash
-    docker-compose up postgres -d # Start the database
-    sleep 10 # Give it a moment to wake up
+    # No need for Docker Compose for the database, SQLite is built-in!
     pip install -r requirements.txt # Get my dependencies
     alembic upgrade head # Set up my database tables
     ```
