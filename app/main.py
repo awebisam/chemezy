@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -56,18 +56,11 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
-    """Root endpoint providing API information."""
-    return {
-        "message": "Welcome to the Chemezy Backend Engine",
-        "description": "The source code of reality for chemical simulations",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "endpoints": {
-            "authentication": "/api/v1/auth",
-            "reactions": "/api/v1/reactions",
-            "chemicals": "/api/v1/chemicals"
-        }
-    }
+    """Root endpoint serves the index.html file."""
+    file_path = "./index.html"
+    with open(file_path, "r") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
 
 
 @app.get("/health")

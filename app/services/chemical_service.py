@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 
 import dspy
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, delete
 
 from app.core.config import settings
 from app.core.dspy_manager import is_dspy_configured
@@ -106,3 +106,11 @@ class ChemicalService:
         self.db.commit()
         self.db.refresh(db_chemical)
         return db_chemical
+
+    def clear_all_chemicals(self) -> dict[str, any]:
+        """Clears all chemicals from the database."""
+        
+        deleted_chemicals_count = self.db.exec(delete(Chemical)).rowcount
+        self.db.commit()
+
+        return {"message": f"Successfully deleted {deleted_chemicals_count} chemicals."}

@@ -4,153 +4,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemezy 3D Lab</title>
+    <title>Chemezy Advanced Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-            background-color: #111827;
-            /* bg-gray-900 */
+        /* Custom styles for a better dark mode and Choices.js */
+        .choices__inner {
+            background-color: #374151; /* bg-gray-700 */
+            border: 1px solid #4b5563; /* border-gray-600 */
+            color: white;
         }
-
-        #auth-modal,
-        #info-modal {
-            background-color: rgba(0, 0, 0, 0.7);
+        .choices__list--dropdown, .choices__list[aria-expanded] {
+            background-color: #374151; /* bg-gray-700 */
+            border-color: #4b5563; /* border-gray-600 */
         }
-
-        canvas {
-            display: block;
+        .choices__list--single .choices__item {
+            color: white;
         }
+        .choices__option--choice {
+            color: #d1d5db; /* text-gray-300 */
+        }
+        .choices__option--choice:hover {
+            background-color: #4b5563; /* bg-gray-600 */
+        }
+        .choices[data-type*="select-one"]::after {
+            border-color: white transparent transparent;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-    <!-- 3D Canvas -->
-    <div id="canvas-container" class="absolute top-0 left-0 w-full h-full"></div>
+<body class="bg-gray-900 text-gray-200 font-sans antialiased">
 
-    <!-- UI Elements -->
-    <div class="absolute top-0 left-0 p-4 text-white">
-        <h1 class="text-2xl font-bold">Chemezy 3D Lab</h1>
-        <p id="user-info" class="text-sm text-gray-400">Not logged in</p>
-    </div>
-
-    <!-- Chemical Inventory -->
-    <div id="inventory-panel"
-        class="absolute bottom-0 left-0 w-full bg-gray-800 bg-opacity-80 p-4 backdrop-blur-sm hidden">
-        <h2 class="text-white text-lg font-semibold mb-2">Chemical Inventory</h2>
-        <div id="inventory-grid" class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-4 overflow-y-auto max-h-40">
-            <!-- Chemical items will be injected here -->
-        </div>
-    </div>
-
-    <!-- Reaction Controls -->
-    <div id="reaction-controls"
-        class="absolute top-1/2 right-4 -translate-y-1/2 bg-gray-800 bg-opacity-80 p-4 rounded-lg backdrop-blur-sm hidden">
-        <h3 class="text-white font-semibold mb-3 text-center">Reaction Vessel</h3>
-        <div id="reactant-list" class="mb-4 space-y-2">
-            <!-- Reactants added to the vessel will appear here -->
-        </div>
-        <button id="react-button"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-500">
-            Run Reaction
-        </button>
-        <button id="clear-button"
-            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mt-2">
-            Clear Vessel
-        </button>
+    <!-- Notification Container -->
+    <div id="notification" class="fixed top-5 right-5 bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg z-50 hidden transition-opacity duration-300">
+        <p id="notification-message"></p>
     </div>
 
     <!-- Auth Modal -->
-    <div id="auth-modal" class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-96">
-            <h2 class="text-white text-2xl font-bold mb-4 text-center">Login or Register</h2>
-            <div class="mb-4">
-                <label for="username" class="block text-gray-400 text-sm font-bold mb-2">Username</label>
-                <input type="text" id="username"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="chemist">
+    <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-40">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <h2 class="text-white text-2xl font-bold mb-6 text-center">Welcome to Chemezy</h2>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="Username" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" id="password" placeholder="Password" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 rounded-md px-4 py-2 font-bold transition-colors">Login</button>
             </div>
-            <div class="mb-6">
-                <label for="password" class="block text-gray-400 text-sm font-bold mb-2">Password</label>
-                <input type="password" id="password"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white mb-3 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="******************">
-            </div>
-            <div class="flex items-center justify-between">
-                <button id="login-button"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="button">
-                    Login
-                </button>
-                <button id="register-button"
-                    class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
-                    type="button">
-                    Register
-                </button>
-            </div>
-            <p id="auth-error" class="text-red-500 text-xs italic mt-4 text-center"></p>
         </div>
     </div>
 
-    <!-- Info Modal for Messages -->
-    <div id="info-modal" class="absolute top-0 left-0 w-full h-full flex items-center justify-center hidden">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md text-center">
-            <h2 id="info-title" class="text-white text-2xl font-bold mb-4"></h2>
-            <p id="info-message" class="text-gray-300 mb-6"></p>
-            <button id="info-close-button"
-                class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                type="button">
-                Close
-            </button>
-        </div>
+    <!-- Main App -->
+    <div id="app-section" class="hidden">
+        <header class="bg-gray-800 shadow-md p-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Chemezy Dashboard</h1>
+            <div class="text-sm">Logged in as: <span id="user-display" class="font-semibold"></span></div>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            <!-- Left Column: Controls -->
+            <div class="space-y-6">
+                <!-- Reaction Simulator -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Reaction Simulator</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block mb-2 font-semibold">Reactants</label>
+                            <div id="reactants-list" class="space-y-2"></div>
+                            <button id="add-reactant-btn" class="mt-2 bg-green-600 hover:bg-green-700 text-sm rounded px-3 py-1 transition-colors">+ Add Reactant</button>
+                        </div>
+                        <div>
+                            <label for="catalyst-selector" class="block mb-2 font-semibold">Catalyst (Optional)</label>
+                            <select id="catalyst-selector"></select>
+                        </div>
+                        <button id="run-reaction-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 rounded-md px-4 py-2 font-bold transition-colors">Run Reaction</button>
+                    </div>
+                </div>
+
+                <!-- Debug Zone -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Debug Zone</h2>
+                    <div class="space-y-4">
+                        <!-- Delete Single Item -->
+                        <div>
+                            <h3 class="font-semibold mb-2">Request Item Deletion</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="delete-chemical-selector" class="block text-sm mb-1">Chemical</label>
+                                    <select id="delete-chemical-selector"></select>
+                                </div>
+                                <div>
+                                    <label for="delete-reaction-selector" class="block text-sm mb-1">Reaction</label>
+                                    <select id="delete-reaction-selector"></select>
+                                </div>
+                            </div>
+                            <textarea id="delete-reason" placeholder="Reason for deletion..." class="mt-2 w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm h-20 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                            <button id="request-delete-btn" class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-sm rounded px-3 py-1 transition-colors">Request Deletion</button>
+                        </div>
+                        <!-- Clear All -->
+                        <div>
+                            <h3 class="font-semibold mb-2">Clear Database Collections</h3>
+                            <div class="flex space-x-4">
+                                <button id="clear-chemicals-btn" class="w-full bg-red-700 hover:bg-red-800 rounded-md px-4 py-2 font-bold transition-colors">Clear All Chemicals</button>
+                                <button id="clear-reactions-btn" class="w-full bg-red-700 hover:bg-red-800 rounded-md px-4 py-2 font-bold transition-colors">Clear All Reactions</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Results & Logs</h2>
+                <div id="results-output" class="prose prose-invert max-w-none text-gray-300">
+                    <p>Run a reaction or a debug command to see the output here.</p>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <!-- Reactant Row Template -->
+    <template id="reactant-row-template">
+        <div class="flex items-center space-x-2 reactant-row">
+            <select class="reactant-selector flex-grow"></select>
+            <button class="remove-reactant-btn bg-red-600 hover:bg-red-700 text-xs rounded px-2 py-1 transition-colors">Remove</button>
+        </div>
+    </template>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
-            }
-        }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        // --- CONFIGURATION ---
-        const API_BASE_URL = 'http://localhost:8000/api/v1'; // Replace with your backend URL if different
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIG & STATE ---
+        const API_BASE_URL = '/api/v1';
         let authToken = null;
+        let chemicals = [];
+        let reactions = [];
+        let choicesInstances = {};
 
         // --- DOM ELEMENTS ---
         const ui = {
+            notification: document.getElementById('notification'),
+            notificationMessage: document.getElementById('notification-message'),
             authModal: document.getElementById('auth-modal'),
-            loginButton: document.getElementById('login-button'),
-            registerButton: document.getElementById('register-button'),
+            loginBtn: document.getElementById('login-btn'),
             usernameInput: document.getElementById('username'),
             passwordInput: document.getElementById('password'),
-            authError: document.getElementById('auth-error'),
-            userInfo: document.getElementById('user-info'),
-            inventoryPanel: document.getElementById('inventory-panel'),
-            inventoryGrid: document.getElementById('inventory-grid'),
-            reactionControls: document.getElementById('reaction-controls'),
-            reactantList: document.getElementById('reactant-list'),
-            reactButton: document.getElementById('react-button'),
-            clearButton: document.getElementById('clear-button'),
-            infoModal: document.getElementById('info-modal'),
-            infoTitle: document.getElementById('info-title'),
-            infoMessage: document.getElementById('info-message'),
-            infoCloseButton: document.getElementById('info-close-button'),
+            appSection: document.getElementById('app-section'),
+            userDisplay: document.getElementById('user-display'),
+            reactantsList: document.getElementById('reactants-list'),
+            addReactantBtn: document.getElementById('add-reactant-btn'),
+            runReactionBtn: document.getElementById('run-reaction-btn'),
+            resultsOutput: document.getElementById('results-output'),
+            reactantRowTemplate: document.getElementById('reactant-row-template'),
+            // Debug
+            clearChemicalsBtn: document.getElementById('clear-chemicals-btn'),
+            clearReactionsBtn: document.getElementById('clear-reactions-btn'),
+            requestDeleteBtn: document.getElementById('request-delete-btn'),
+            deleteReason: document.getElementById('delete-reason'),
         };
 
         // --- API SERVICE ---
-        class ApiService {
+        const api = {
             async _request(endpoint, options = {}) {
                 const headers = { 'Content-Type': 'application/json', ...options.headers };
                 if (authToken) {
@@ -161,9 +178,10 @@
                     const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
                     throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
                 }
+                // Handle no content response
+                if (response.status === 204) return null;
                 return response.json();
-            }
-
+            },
             login(username, password) {
                 const formData = new URLSearchParams();
                 formData.append('username', username);
@@ -173,429 +191,216 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData,
                 });
+            },
+            getChemicals: () => api._request('/chemicals/'),
+            getReactions: () => api._request('/reactions/cache'), // Assuming this gets all for debug
+            runReaction: (body) => api._request('/reactions/react', { method: 'POST', body: JSON.stringify(body) }),
+            // Debug APIs
+            clearAllChemicals: () => api._request('/debug/chemicals/clear', { method: 'DELETE' }),
+            clearAllReactions: () => api._request('/debug/reactions/clear', { method: 'DELETE' }),
+            requestDelete: (type, id, reason) => api._request(`/debug/${type}/${id}`, { method: 'DELETE', body: JSON.stringify({ reason }) }),
+        };
+
+        // --- UTILS & RENDERERS ---
+        const showNotification = (message, type = 'info') => {
+            ui.notificationMessage.textContent = message;
+            ui.notification.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+            ui.notification.classList.remove('hidden');
+            setTimeout(() => ui.notification.classList.add('hidden'), 3000);
+        };
+
+        const renderResults = (title, data) => {
+            let content = `<h3>${title}</h3>`;
+            if (typeof data === 'object' && data !== null) {
+                content += `<pre class="whitespace-pre-wrap text-sm">${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                content += `<p>${data}</p>`;
             }
+            ui.resultsOutput.innerHTML = content;
+        };
 
-            register(username, email, password) {
-                return this._request('/auth/register', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, email, password }),
-                });
+        const renderReactionResults = (data) => {
+            let html = `<h3>Reaction Complete</h3>`;
+            if (data.is_world_first) {
+                html += `<p class="text-yellow-400 font-bold">Congratulations! You've made a World-First Discovery!</p>`;
             }
+            html += `<p><strong>Explanation:</strong> ${data.explanation}</p>`;
+            html += `<p><strong>State of Product:</strong> ${data.state_of_product}</p>`;
+            
+            html += `<h4>Products:</h4><ul>`;
+            data.products.forEach(p => {
+                html += `<li>${p.molecular_formula} (ID: ${p.chemical_id}) - Quantity: ${p.quantity}</li>`;
+            });
+            html += `</ul>`;
 
-            getChemicals() {
-                return this._request('/chemicals/');
+            html += `<h4>Effects:</h4><ul>`;
+            data.effects.forEach(e => {
+                html += `<li>${e.effect_type} (Intensity: ${e.intensity}, Color: <span style="color:${e.color};">${e.color}</span>)</li>`;
+            });
+            html += `</ul>`;
+            ui.resultsOutput.innerHTML = html;
+        };
+
+        const createChoices = (selectorId, options = {}) => {
+            if (choicesInstances[selectorId]) {
+                choicesInstances[selectorId].destroy();
             }
+            const element = document.getElementById(selectorId);
+            if (!element) return null;
+            const instance = new Choices(element, {
+                ...options,
+                itemSelectText: 'Press to select',
+                searchResultLimit: 100,
+            });
+            choicesInstances[selectorId] = instance;
+            return instance;
+        };
 
-            runReaction(reactants) {
-                // Reactants should be in the format: [{ chemical_id: int, quantity: float }]
-                return this._request('/reactions/react', {
-                    method: 'POST',
-                    body: JSON.stringify({ reactants, environment: "Earth (Normal)" }), // Env is hardcoded for now
-                });
+        const populateChoices = (instance, data, placeholder) => {
+            instance.clearStore();
+            instance.setChoices([
+                { value: '', label: placeholder, selected: true, disabled: true },
+                ...data
+            ], 'value', 'label', false);
+        };
+
+        // --- INITIALIZATION ---
+        const init = async () => {
+            try {
+                const [chemicalsData, reactionsData] = await Promise.all([api.getChemicals(), api.getReactions()]);
+                chemicals = chemicalsData.results;
+                reactions = reactionsData;
+
+                const chemicalChoices = chemicals.map(c => ({ value: c.id, label: `${c.common_name} (${c.molecular_formula})` }));
+                const reactionChoices = reactions.map(r => ({ value: r.id, label: `Reaction #${r.id} (${r.reactants.join(', ')})` }));
+
+                // Init main selectors
+                addReactantSelector();
+                const catalystChoices = createChoices('catalyst-selector');
+                populateChoices(catalystChoices, chemicalChoices, 'Select a catalyst');
+
+                // Init debug selectors
+                const deleteChemicalChoices = createChoices('delete-chemical-selector');
+                populateChoices(deleteChemicalChoices, chemicalChoices, 'Select a chemical');
+                
+                const deleteReactionChoices = createChoices('delete-reaction-selector');
+                populateChoices(deleteReactionChoices, reactionChoices, 'Select a reaction');
+
+            } catch (error) {
+                showNotification(`Failed to load initial data: ${error.message}`, 'error');
             }
-        }
-        const api = new ApiService();
+        };
 
-        // --- 3D SCENE SETUP ---
-        class LabScene {
-            constructor() {
-                this.scene = new THREE.Scene();
-                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                this.renderer = new THREE.WebGLRenderer({ antialias: true });
-                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-                this.raycaster = new THREE.Raycaster();
-                this.mouse = new THREE.Vector2();
-                this.interactiveObjects = [];
-                this.reactantsInVessel = new Map(); // Map<chemicalId, {chemical, mesh}>
-                this.init();
-            }
+        const addReactantSelector = () => {
+            const templateNode = ui.reactantRowTemplate.content.cloneNode(true);
+            const newRow = templateNode.querySelector('.reactant-row');
+            ui.reactantsList.appendChild(newRow);
+            
+            const selectorElement = newRow.querySelector('.reactant-selector');
+            const choices = new Choices(selectorElement, { itemSelectText: 'Press to select' });
+            choices.setChoices([
+                { value: '', label: 'Select a reactant', selected: true, disabled: true },
+                ...chemicals.map(c => ({ value: c.id, label: `${c.common_name} (${c.molecular_formula})` }))
+            ], 'value', 'label', false);
 
-            init() {
-                // Renderer
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(window.devicePixelRatio);
-                this.renderer.shadowMap.enabled = true;
-                document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+            newRow.querySelector('.remove-reactant-btn').addEventListener('click', () => newRow.remove());
+        };
 
-                // Camera
-                this.camera.position.set(0, 1.8, 4);
-                this.controls.target.set(0, 1, 0);
-                this.controls.update();
-
-                // Lighting
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-                this.scene.add(ambientLight);
-
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-                directionalLight.position.set(5, 10, 7.5);
-                directionalLight.castShadow = true;
-                this.scene.add(directionalLight);
-
-                // Environment
-                this.createLabEnvironment();
-                this.createReactionVessel();
-
-                // Event Listeners
-                window.addEventListener('resize', this.onWindowResize.bind(this));
-                window.addEventListener('click', this.onMouseClick.bind(this));
-
-                // Animation Loop
-                this.animate();
-            }
-
-            createLabEnvironment() {
-                // Floor
-                const floorGeometry = new THREE.PlaneGeometry(20, 20);
-                const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, side: THREE.DoubleSide });
-                const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-                floor.rotation.x = -Math.PI / 2;
-                floor.receiveShadow = true;
-                this.scene.add(floor);
-
-                // Lab Bench
-                const benchGeometry = new THREE.BoxGeometry(6, 1, 3);
-                const benchMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
-                const bench = new THREE.Mesh(benchGeometry, benchMaterial);
-                bench.position.y = 0.5;
-                bench.castShadow = true;
-                bench.receiveShadow = true;
-                this.scene.add(bench);
-            }
-
-            createReactionVessel() {
-                const vesselGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-                const vesselMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.3,
-                    roughness: 0.1,
-                    metalness: 0.2
-                });
-                this.reactionVessel = new THREE.Mesh(vesselGeometry, vesselMaterial);
-                this.reactionVessel.position.set(0, 1.5, 0);
-                this.reactionVessel.castShadow = true;
-                this.scene.add(this.reactionVessel);
-
-                // Liquid inside the vessel
-                const liquidGeometry = new THREE.CylinderGeometry(0.48, 0.48, 0.01, 32);
-                const liquidMaterial = new THREE.MeshStandardMaterial({ color: 0x5555ff, transparent: true, opacity: 0.7 });
-                this.vesselLiquid = new THREE.Mesh(liquidGeometry, liquidMaterial);
-                this.vesselLiquid.position.y = -0.49; // Start at the bottom
-                this.reactionVessel.add(this.vesselLiquid); // Add as child
-            }
-
-            addChemicalToVessel(chemical) {
-                if (this.reactantsInVessel.has(chemical.id)) {
-                    showInfo("Info", `${chemical.common_name} is already in the vessel.`);
-                    return;
-                }
-
-                // Create a visual representation in the UI
-                const reactantUI = document.createElement('div');
-                reactantUI.className = 'flex items-center justify-between text-white text-sm';
-                reactantUI.id = `reactant-ui-${chemical.id}`;
-                reactantUI.innerHTML = `<span>${chemical.common_name}</span>`;
-                ui.reactantList.appendChild(reactantUI);
-
-                // Add to our internal state
-                this.reactantsInVessel.set(chemical.id, { chemical, quantity: 1.0 }); // Assuming quantity 1 for now
-
-                // Update 3D liquid level
-                const newLevel = this.reactantsInVessel.size * 0.1;
-                this.vesselLiquid.geometry = new THREE.CylinderGeometry(0.48, 0.48, newLevel, 32);
-                this.vesselLiquid.position.y = -0.5 + newLevel / 2;
-                this.vesselLiquid.visible = true;
-            }
-
-            clearVessel() {
-                this.reactantsInVessel.clear();
-                ui.reactantList.innerHTML = '';
-                this.vesselLiquid.visible = false;
-                this.vesselLiquid.position.y = -0.49;
-                this.vesselLiquid.geometry = new THREE.CylinderGeometry(0.48, 0.48, 0.01, 32);
-            }
-
-            async runReaction() {
-                if (this.reactantsInVessel.size < 1) {
-                    showInfo("Error", "Add at least one chemical to the vessel.");
-                    return;
-                }
-
-                const reactantsPayload = Array.from(this.reactantsInVessel.values()).map(r => ({
-                    chemical_id: r.chemical.id,
-                    quantity: r.quantity
-                }));
-
-                try {
-                    showInfo("Processing...", "Running chemical reaction simulation.");
-                    const result = await api.runReaction(reactantsPayload);
-                    this.visualizeReaction(result);
-                } catch (error) {
-                    showInfo("Reaction Failed", error.message);
-                }
-            }
-
-            visualizeReaction(result) {
-                console.log("Reaction Result:", result);
-                let message = `Reaction produced ${result.products.length} products.`;
-                if (result.state_of_product) {
-                    message += `
-
-State of Product: ${result.state_of_product}`;
-                }
-                if (result.explanation) {
-                    message += `
-
-Explanation: ${result.explanation}`;
-                }
-                if (result.is_world_first) {
-                    message += "\n\nCongratulations! You've made a World-First Discovery!";
-                }
-                showInfo("Reaction Complete", message);
-
-                // Clear old reactants and add new products
-                this.clearVessel();
-
-                // For simplicity, we just show the first product
-                if (result.products.length > 0) {
-                    const firstProduct = result.products[0];
-                    // In a full game, you'd fetch the full chemical data for the product
-                    const productChemical = { id: firstProduct.chemical_id, common_name: firstProduct.molecular_formula };
-                    this.addChemicalToVessel(productChemical);
-                }
-
-                // Trigger visual effects
-                result.effects.forEach(effect => this.triggerEffect(effect));
-            }
-
-            triggerEffect(effect) {
-                const effectMap = {
-                    "gas_production": this.createGasEffect,
-                    "light_emission": this.createLightEffect,
-                    "temperature_change": this.createTempEffect,
-                    // Add other effects here
-                };
-
-                const effectFunction = effectMap[effect.effect_type];
-                if (effectFunction) {
-                    effectFunction.bind(this)(effect);
-                } else {
-                    console.warn(`Unsupported effect type: ${effect.effect_type}`);
-                }
-            }
-
-            createGasEffect(params) {
-                const particleCount = 200 * params.intensity;
-                const particles = new THREE.BufferGeometry();
-                const positions = new Float32Array(particleCount * 3);
-                const velocities = [];
-
-                for (let i = 0; i < particleCount * 3; i++) {
-                    positions[i] = (Math.random() - 0.5) * 0.5; // Start inside vessel
-                    velocities.push((Math.random() - 0.5) * 0.02, Math.random() * 0.05, (Math.random() - 0.5) * 0.02);
-                }
-                particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const particleMaterial = new THREE.PointsMaterial({
-                    color: new THREE.Color(params.color || '#ffffff'),
-                    size: 0.05,
-                    transparent: true,
-                    opacity: 0.8,
-                    blending: THREE.AdditiveBlending
-                });
-
-                const particleSystem = new THREE.Points(particles, particleMaterial);
-                particleSystem.position.copy(this.reactionVessel.position);
-                particleSystem.position.y += 0.5; // Start above liquid
-                this.scene.add(particleSystem);
-
-                const duration = (params.duration || 3) * 1000;
-                const startTime = Date.now();
-
-                const animateParticles = () => {
-                    const elapsedTime = Date.now() - startTime;
-                    if (elapsedTime > duration) {
-                        this.scene.remove(particleSystem);
-                        return;
-                    }
-
-                    const positions = particleSystem.geometry.attributes.position.array;
-                    for (let i = 0; i < particleCount; i++) {
-                        positions[i * 3] += velocities[i * 3];
-                        positions[i * 3 + 1] += velocities[i * 3 + 1];
-                        positions[i * 3 + 2] += velocities[i * 3 + 2];
-                    }
-                    particleSystem.geometry.attributes.position.needsUpdate = true;
-                    particleSystem.material.opacity = 1.0 - (elapsedTime / duration);
-
-                    requestAnimationFrame(animateParticles);
-                };
-                animateParticles();
-            }
-
-            createLightEffect(params) {
-                const light = new THREE.PointLight(new THREE.Color(params.color || '#ffff00'), params.intensity * 5, params.radius * 2);
-                light.position.copy(this.reactionVessel.position);
-                this.scene.add(light);
-
-                setTimeout(() => {
-                    this.scene.remove(light);
-                }, (params.duration || 2) * 1000);
-            }
-
-            createTempEffect(params) {
-                // Visual cue for temperature change, e.g., changing vessel color
-                const originalColor = this.reactionVessel.material.color.clone();
-                const targetColor = params.delta_celsius > 0 ? new THREE.Color('#ff8888') : new THREE.Color('#8888ff');
-                this.reactionVessel.material.color.lerp(targetColor, 0.5);
-                setTimeout(() => {
-                    this.reactionVessel.material.color.copy(originalColor);
-                }, 3000);
-            }
-
-
-            onWindowResize() {
-                this.camera.aspect = window.innerWidth / window.innerHeight;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            onMouseClick(event) {
-                // We only care about clicks if the user is logged in and not in a modal
-                if (!authToken || ui.infoModal.style.display !== 'none') return;
-
-                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-
-                const intersects = this.raycaster.intersectObjects(this.interactiveObjects);
-
-                if (intersects.length > 0) {
-                    const clickedObject = intersects[0].object;
-                    if (clickedObject.userData.chemical) {
-                        this.addChemicalToVessel(clickedObject.userData.chemical);
-                    }
-                }
-            }
-
-            animate() {
-                requestAnimationFrame(this.animate.bind(this));
-                this.controls.update();
-                this.renderer.render(this.scene, this.camera);
-            }
-
-            populateInventory(chemicals) {
-                ui.inventoryGrid.innerHTML = '';
-                this.interactiveObjects = []; // Clear old interactive objects
-
-                chemicals.forEach((chemical, index) => {
-                    // Create UI element
-                    const item = document.createElement('div');
-                    item.className = 'bg-gray-700 p-2 rounded-lg text-center cursor-pointer hover:bg-gray-600 transition';
-                    item.innerHTML = `<div class="font-bold text-white">${chemical.molecular_formula}</div><div class="text-xs text-gray-400">${chemical.common_name}</div>`;
-                    item.onclick = () => this.addChemicalToVessel(chemical);
-                    ui.inventoryGrid.appendChild(item);
-
-                    // Create 3D representation (e.g., on a shelf)
-                    const beakerGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.3, 16);
-                    const beakerMaterial = new THREE.MeshStandardMaterial({
-                        color: 0xcccccc,
-                        transparent: true,
-                        opacity: 0.5
-                    });
-                    const beaker = new THREE.Mesh(beakerGeometry, beakerMaterial);
-
-                    const liquidGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.25, 16);
-                    const liquidMat = new THREE.MeshStandardMaterial({ color: chemical.color || '#ffffff' });
-                    const liquid = new THREE.Mesh(liquidGeo, liquidMat);
-                    liquid.position.y = -0.025;
-                    beaker.add(liquid);
-
-                    const xPos = -2.5 + (index % 10) * 0.5;
-                    const zPos = -2 + Math.floor(index / 10) * 0.5;
-                    beaker.position.set(xPos, 1.15, zPos);
-                    beaker.userData.chemical = chemical; // Link 3D object to chemical data
-
-                    this.scene.add(beaker);
-                    this.interactiveObjects.push(beaker);
-                });
-            }
-        }
-
-        // --- APPLICATION LOGIC ---
-        const labScene = new LabScene();
-
-        function showInfo(title, message) {
-            ui.infoTitle.textContent = title;
-            ui.infoMessage.textContent = message;
-            ui.infoModal.style.display = 'flex';
-        }
-
-        function hideInfo() {
-            ui.infoModal.style.display = 'none';
-        }
-
-        async function handleLogin() {
+        // --- EVENT HANDLERS ---
+        const handleLogin = async () => {
             const username = ui.usernameInput.value;
             const password = ui.passwordInput.value;
-            if (!username || !password) {
-                ui.authError.textContent = 'Username and password are required.';
-                return;
-            }
+            if (!username || !password) return showNotification('Username and password are required.', 'error');
+            
             try {
                 const data = await api.login(username, password);
                 authToken = data.access_token;
-                ui.authModal.style.display = 'none';
-                ui.userInfo.textContent = `Logged in as: ${username}`;
-                ui.inventoryPanel.style.display = 'block';
-                ui.reactionControls.style.display = 'block';
-                loadInitialData();
+                ui.authModal.classList.add('hidden');
+                ui.appSection.classList.remove('hidden');
+                ui.userDisplay.textContent = username;
+                showNotification('Login successful!');
+                await init();
             } catch (error) {
-                ui.authError.textContent = error.message;
+                showNotification(error.message, 'error');
             }
-        }
+        };
 
-        async function handleRegister() {
-            const username = ui.usernameInput.value;
-            const password = ui.passwordInput.value;
-            const email = `${username}@chemezy.io`; // Dummy email for now
-            if (!username || !password) {
-                ui.authError.textContent = 'Username and password are required.';
-                return;
+        const handleRunReaction = async () => {
+            const reactantRows = ui.reactantsList.querySelectorAll('.reactant-row');
+            const reactants = Array.from(reactantRows).map(row => {
+                const selector = row.querySelector('.reactant-selector');
+                return selector.value ? { chemical_id: parseInt(selector.value), quantity: 1.0 } : null;
+            }).filter(Boolean);
+
+            if (reactants.length === 0) {
+                return showNotification('Please select at least one reactant.', 'error');
             }
+
+            const catalyst_id = choicesInstances['catalyst-selector'].getValue(true) || null;
+            
             try {
-                await api.register(username, email, password);
-                showInfo('Registration Successful', 'You can now log in with your new account.');
-                ui.passwordInput.value = ''; // Clear password for login
+                renderResults('Running Reaction...', { status: 'Processing...' });
+                const result = await api.runReaction({ reactants, catalyst_id, environment: "Earth (Normal)" });
+                renderReactionResults(result);
+                showNotification('Reaction complete!');
             } catch (error) {
-                ui.authError.textContent = error.message;
+                renderResults('Reaction Failed', { error: error.message });
+                showNotification(error.message, 'error');
             }
-        }
+        };
 
-        async function loadInitialData() {
+        const handleDebugClear = async (type) => {
+            if (!confirm(`Are you sure you want to delete ALL ${type}? This action cannot be undone.`)) return;
             try {
-                const chemicalsData = await api.getChemicals();
-                labScene.populateInventory(chemicalsData.results);
+                const result = (type === 'chemicals') ? await api.clearAllChemicals() : await api.clearAllReactions();
+                renderResults(`Cleared All ${type}`, result);
+                showNotification(result.message);
+                await init(); // Refresh data
             } catch (error) {
-                showInfo('Error', `Failed to load chemicals: ${error.message}`);
+                renderResults(`Failed to clear ${type}`, { error: error.message });
+                showNotification(error.message, 'error');
             }
-        }
+        };
 
-        // --- EVENT BINDINGS ---
-        ui.loginButton.addEventListener('click', handleLogin);
-        ui.registerButton.addEventListener('click', handleRegister);
-        ui.infoCloseButton.addEventListener('click', hideInfo);
-        ui.reactButton.addEventListener('click', () => labScene.runReaction());
-        ui.clearButton.addEventListener('click', () => labScene.clearVessel());
+        const handleRequestDelete = async () => {
+            const chemicalId = choicesInstances['delete-chemical-selector'].getValue(true);
+            const reactionId = choicesInstances['delete-reaction-selector'].getValue(true);
+            const reason = ui.deleteReason.value;
 
-        // Allow login with Enter key
-        ui.passwordInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                handleLogin();
+            if ((!chemicalId && !reactionId) || (chemicalId && reactionId)) {
+                return showNotification('Please select exactly one chemical OR one reaction to delete.', 'error');
             }
-        });
+            if (!reason) {
+                return showNotification('A reason for deletion is required.', 'error');
+            }
 
-    </script>
+            const type = chemicalId ? 'chemicals' : 'reactions';
+            const id = chemicalId || reactionId;
+
+            try {
+                const result = await api.requestDelete(type, id, reason);
+                renderResults('Deletion Request Submitted', result);
+                showNotification(result.message);
+                ui.deleteReason.value = '';
+                choicesInstances['delete-chemical-selector'].setChoiceByValue('');
+                choicesInstances['delete-reaction-selector'].setChoiceByValue('');
+            } catch (error) {
+                renderResults('Deletion Request Failed', { error: error.message });
+                showNotification(error.message, 'error');
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        ui.loginBtn.addEventListener('click', handleLogin);
+        ui.passwordInput.addEventListener('keyup', e => e.key === 'Enter' && handleLogin());
+        ui.addReactantBtn.addEventListener('click', addReactantSelector);
+        ui.runReactionBtn.addEventListener('click', handleRunReaction);
+        // Debug listeners
+        ui.clearChemicalsBtn.addEventListener('click', () => handleDebugClear('chemicals'));
+        ui.clearReactionsBtn.addEventListener('click', () => handleDebugClear('reactions'));
+        ui.requestDeleteBtn.addEventListener('click', handleRequestDelete);
+    });
+</script>
+
 </body>
-
 </html>

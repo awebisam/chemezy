@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import users, reactions, chemicals
+from app.api.v1.endpoints import users, reactions, chemicals, debug
 
 api_router = APIRouter()
 
@@ -15,3 +15,7 @@ api_router.include_router(
 # Include chemical-related endpoints
 api_router.include_router(
     chemicals.router, prefix="/chemicals", tags=["chemicals"])
+
+# Include debug-related endpoints
+api_router.include_router(
+    debug.router, prefix="/debug", tags=["debug"])

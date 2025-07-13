@@ -2,7 +2,7 @@ import json
 import hashlib
 from typing import List, Dict, Any
 
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, delete
 import dspy
 
 from app.core.config import settings
@@ -228,3 +228,11 @@ class ReactionService:
             "total_reactions": total_reactions,
             "total_discoveries": total_discoveries
         }
+
+    def clear_all_reactions(self) -> Dict[str, Any]:
+        """Clears all reactions from the database."""
+        
+        deleted_reactions_count = self.db.exec(delete(ReactionCache)).rowcount
+        self.db.commit()
+
+        return {"message": f"Successfully deleted {deleted_reactions_count} reactions."}
