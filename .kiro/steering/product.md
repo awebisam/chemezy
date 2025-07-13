@@ -1,24 +1,24 @@
-# Chemezy Backend - Product Overview
+# Chemezy Backend Product Overview
 
-Chemezy is a chemistry simulation game backend that serves as "the source code of reality" for the Chemezy universe. Players interact with a 3D frontend to perform chemical experiments, while this backend provides the scientific intelligence and deterministic reaction calculations.
+Chemezy is a gamified chemistry simulation platform that combines real scientific data with AI-powered reaction prediction and a comprehensive award system.
 
 ## Core Purpose
-- Process chemical reaction requests from the SvelteKit frontend
-- Generate scientifically accurate reaction outcomes using AI and real chemical data
-- Maintain a discovery system where players can be the first to trigger unique reactions
-- Cache reactions for deterministic results (same inputs = same outputs)
+The backend serves as "the source code of reality" for the Chemezy game universe, providing:
+- **Chemistry Engine**: AI-powered chemical reaction simulation using real PubChem data
+- **Award System**: Comprehensive gamification with discovery tracking, leaderboards, and achievements
+- **User Management**: Authentication, profiles, and community features
 
 ## Key Features
-- **Two-layer processing**: Memory cache for known reactions, AI reasoning for new ones
-- **RAG system**: Uses PubChem database for real chemical data
-- **Discovery tracking**: Records world-first reactions and attributes them to players
-- **JWT authentication**: User management and secure API access
-- **Rate limiting**: Prevents abuse while maintaining performance
+- **Deterministic Reactions**: Same inputs always produce same outputs via intelligent caching
+- **Real Science**: Grounded in PubChem database with RAG-enhanced AI reasoning
+- **Discovery System**: Tracks world-first reactions and effects for bragging rights
+- **Multi-tier Awards**: Bronze/Silver/Gold progression across multiple categories
+- **Community Engagement**: Leaderboards, recent achievements feed, and social features
 
-## API Response Format
-All reactions return structured JSON with:
-- `products`: New chemicals created
-- `state_of_product`: Final state of main product
-- `effects`: Visual/audio effects for the frontend (fizzing, fire, color changes)
-- `explanation`: Educational content for players
-- `is_world_first`: Flag for unique discoveries
+## Target Users
+- Chemistry students and educators
+- Game players interested in scientific accuracy
+- Developers building chemistry-related applications
+
+## Business Logic
+The system prioritizes scientific accuracy over entertainment, using AI to reason through chemical interactions while maintaining game-like engagement through achievements and social features.

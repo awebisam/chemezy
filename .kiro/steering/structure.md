@@ -1,64 +1,108 @@
-# Project Structure & Organization
+# Chemezy Backend Project Structure
 
-## Root Level
-- `app/`: Main application package
-- `tests/`: Test suite with parallel structure to app
-- `alembic/`: Database migration files
-- `scripts/`: Utility scripts
-- `.env`: Environment configuration (copy from `.env.example`)
-- `requirements.txt`: Python dependencies
-- `chemezy.db`: SQLite database file (auto-generated)
+## Architecture Pattern
+The project follows a **layered service architecture** with clear separation of concerns:
+- **API Layer**: FastAPI endpoints with request/response handling
+- **Service Layer**: Business logic and orchestration
+- **Model Layer**: Database entities and schemas
+- **Core Layer**: Configuration, security, and shared utilities
 
-## Application Structure (`app/`)
+## Directory Organization
 
-### Core Components
-- `main.py`: FastAPI application entry point with middleware setup
-- `core/`: Application configuration and shared utilities
-  - `config.py`: Settings management with Pydantic
-  - `security.py`: Authentication utilities
-  - `dspy_manager.py`: AI/LLM configuration
+### `/app` - Main Application Code
+```
+app/
+├── main.py                 # FastAPI application entry point
+├── api/v1/                 # API endpoints (versioned)
+│   ├── api.py             # Router aggregation
+│   └── endpoints/         # Individual endpoint modules
+├── core/                  # Core configuration and utilities
+│   ├── config.py          # Settings and environment variables
+│   ├── security.py        # Authentication utilities
+│   └── dspy_manager.py    # AI/LLM configuration
+├── models/                # SQLModel database entities
+├── schemas/               # Pydantic request/response schemas
+├── services/              # Business logic layer
+└── db/                    # Database configuration
+```
 
-### API Layer (`api/`)
-- `api/v1/`: Versioned API endpoints
-  - `api.py`: Router aggregation
-  - `endpoints/`: Individual endpoint modules
-    - `users.py`: Authentication endpoints
-    - `reactions.py`: Core reaction processing
-    - `chemicals.py`: Chemical management
-    - `debug.py`: Development utilities
+### `/tests` - Testing Suite
+```
+tests/
+├── api/                   # API endpoint tests (bash/curl)
+├── services/              # Service layer tests
+├── integration/           # End-to-end tests
+└── helpers/               # Test utilities and fixtures
+```
 
-### Data Layer
-- `models/`: SQLModel database models
-- `schemas/`: Pydantic request/response schemas
-- `db/`: Database configuration and session management
-
-### Business Logic (`services/`)
-- `chemical_service.py`: Chemical data management
-- `reaction_service.py`: Reaction processing logic
-- `pubchem_service.py`: External API integration
-- `dspy_*.py`: AI reasoning modules
-
-## Testing Structure (`tests/`)
-- `helpers/`: Shared test utilities and authentication helpers
-- `api/`: API endpoint tests using curl
-- `services/`: Service layer tests via API calls
-- `integration/`: End-to-end integration tests
-- Mirrors the `app/` structure for easy navigation
+### `/alembic` - Database Migrations
+```
+alembic/
+├── versions/              # Migration files
+├── env.py                # Migration environment
+└── script.py.mako       # Migration template
+```
 
 ## Naming Conventions
-- **Files**: Snake_case (e.g., `chemical_service.py`)
-- **Classes**: PascalCase (e.g., `ChemicalService`)
-- **Functions/Variables**: Snake_case (e.g., `get_chemical`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `SECRET_KEY`)
-- **Database tables**: Lowercase plural (e.g., `chemicals`)
 
-## Import Patterns
-- Absolute imports from app root: `from app.models.chemical import Chemical`
-- Group imports: stdlib, third-party, local
-- Use `from typing import` for type hints
+### Files and Modules
+- **Snake_case** for Python files: `award_service.py`
+- **Descriptive names** indicating purpose: `leaderboard_service.py`
+- **Plural for collections**: `endpoints/`, `models/`, `services/`
 
-## File Organization Rules
-- One main class per file in services and models
-- Group related schemas in single files
-- Keep endpoint files focused on single resource
-- Separate business logic from API handlers
+### API Endpoints
+- **RESTful patterns**: `/api/v1/awards/me`, `/api/v1/reactions/react`
+- **Versioned URLs**: Always include `/v1/` for future compatibility
+- **Resource-based**: Group by domain entity (awards, reactions, users)
+
+### Database Models
+- **Singular names**: `User`, `Award`, `AwardTemplate`
+- **Clear relationships**: `UserAward` for junction tables
+- **Descriptive fields**: `granted_at`, `template_id`, `is_active`
+
+### Services
+- **Domain-focused**: `AwardService`, `ReactionService`, `LeaderboardService`
+- **Single responsibility**: Each service handles one domain area
+- **Dependency injection**: Services receive database session in constructor
+
+## Code Organization Patterns
+
+### Service Layer Structure
+```python
+class AwardService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.evaluator = AwardEvaluator(db)
+    
+    async def evaluate_discovery_awards(self, user_id: int, context: Dict) -> List[UserAward]:
+        # Business logic here
+        pass
+```
+
+### API Endpoint Structure
+```python
+@router.get("/endpoint", response_model=ResponseSchema)
+async def endpoint_function(
+    query_param: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    # Endpoint logic here
+    pass
+```
+
+### Error Handling
+- **Custom exceptions** per service: `AwardServiceError`, `ReactionServiceError`
+- **HTTP exception mapping** in API layer
+- **Structured error responses** with consistent format
+
+## Import Conventions
+- **Absolute imports** from app root: `from app.services.award_service import AwardService`
+- **Group imports**: Standard library, third-party, local imports
+- **Specific imports**: Import only what's needed, avoid `import *`
+
+## Configuration Management
+- **Environment-based**: All config via `.env` file and `Settings` class
+- **Type-safe**: Use Pydantic for configuration validation
+- **Defaults for development**: Sensible defaults where security allows
+- **Required for production**: No defaults for sensitive values like `SECRET_KEY`
