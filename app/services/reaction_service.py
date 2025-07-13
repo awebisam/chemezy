@@ -1,7 +1,5 @@
 import json
-import json
 import hashlib
-from datetime import datetime
 from typing import List, Dict, Any
 
 from sqlmodel import Session, select, func
@@ -13,14 +11,14 @@ from app.models.reaction import ReactionCache, Discovery
 from app.schemas.reaction import ReactionRequest, ReactionPrediction, ProductOutput, ReactionPredictionDSPyOutput
 from app.schemas.chemical import ChemicalCreate
 from app.services.chemical_service import ChemicalService
-from app.services.dspy_extended import TypedCOTPredict
+from app.services.dspy_extended import ChemistryReasoningModule
 from app.services.dspy_signatures import PredictReactionProductsAndEffects
 
 class ReactionPredictionModule(dspy.Module):
     """DSPy module for reaction prediction."""
     def __init__(self):
         super().__init__()
-        self.generate_prediction = TypedCOTPredict(
+        self.generate_prediction = ChemistryReasoningModule(
             PredictReactionProductsAndEffects,
             reflect=True,
             feedback_retries=settings.dspy_retries

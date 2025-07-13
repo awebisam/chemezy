@@ -17,20 +17,20 @@ class ProductOutput(BaseModel):
     chemical_id: Optional[int] = None
     molecular_formula: str
     quantity: float
+    is_soluble: bool = Field(..., description="Whether the product is soluble in the reaction environment")
 
 class ProductOutputDSPy(BaseModel):
     molecular_formula: str
     quantity: float
+    is_soluble: bool = Field(..., description="Whether the product is soluble in the reaction environment")
 
 class ReactionPrediction(BaseModel):
     products: List[ProductOutput]
-    state_of_product: str
     effects: List[Effect]
     explanation: str
     is_world_first: bool = False
 
 class ReactionPredictionDSPyOutput(BaseModel):
     products: List[ProductOutputDSPy]
-    state_of_product: str
     effects: List[Effect]
     explanation: str

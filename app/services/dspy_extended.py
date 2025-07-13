@@ -1,3 +1,9 @@
+"""Chemistry-focused DSPy extensions for structured reasoning and output formatting.
+
+This module provides enhanced DSPy components specifically tailored for chemistry education
+and chemical reasoning tasks in the Chemezy application.
+"""
+
 import json
 import textwrap
 import re
@@ -5,26 +11,30 @@ from typing import get_args, get_origin
 
 import dspy
 from dspy import ensure_signature, make_signature
-from pydantic import BaseModel, TypeAdapter
-from openai.lib._pydantic import to_strict_json_schema
+from pydantic import TypeAdapter
 
+# Pattern for extracting field headers from chemistry-related content
 field_header_pattern = re.compile(r'\[\[ ## (\w+) ## \]\]')
 
 
-class LLMResponseDecoderException(Exception):
-    def __init__(self):
-        super().__init__()  # Add this line to properly initialize the parent class
+class ChemistryLLMException(Exception):
+    """Exception raised when chemistry LLM operations fail."""
+    def __init__(self, message: str, details: str = None):
+        super().__init__(message)
+        self.details = details
 
     def __str__(self):
-        return f"{self.args[0]}: {self.details}"
+        return f"{self.args[0]}: {self.details}" if self.details else str(self.args[0])
 
 
-def slugify(string, delimiter='_'):
-    return re.sub(r'[\W_]+', delimiter, string.encode('ascii', errors='ignore').decode()).strip(delimiter).lower()
+def format_chemical_name(name: str, delimiter: str = '_') -> str:
+    """Format chemical names for use in identifiers."""
+    return re.sub(r'[\W_]+', delimiter, name.encode('ascii', errors='ignore').decode()).strip(delimiter).lower()
 
 
-class TypedCOTPredict(dspy.Module):
-    def __init__(self, signature, rationale_type=None, cot=True, activated=True, reflect=False, feedback_fn=None, feedback_retries=2, **config):
+class ChemistryReasoningModule(dspy.Module):
+    def __init__(self, signature, rationale_type=None, cot=True, activated=True, 
+                 reflect=False, feedback_fn=None, feedback_retries=2, **config):
         super().__init__()
 
         self.activated = activated
@@ -33,7 +43,7 @@ class TypedCOTPredict(dspy.Module):
         self.feedback_fn = feedback_fn
         self.feedback_retries = feedback_retries
         self.signature = signature = ensure_signature(signature)
-        *_keys, last_key = signature.output_fields.keys()
+        *_, last_key = signature.output_fields.keys()
 
         prefix = "Reasoning: Let's think step by step in order to"
 
@@ -70,7 +80,7 @@ class TypedCOTPredict(dspy.Module):
             if reflect:
                 instructions = textwrap.dedent(f"""Given feedback below, please review your above response and fix the issues.\n<feedback>\n{
                                                feedback_message}\n</feedback>\n\nWrite your response in StructuredOutput.reasoning field. Always respond in single line without wrapping inside ```json or ```.""")
-                kwargs['reflect'] = self._prepare_reflection(
+                kwargs['reflect'] = self._prepare_chemistry_reflection(
                     signature, prediction, instructions)
                 self.pred_reasoning = prediction.reasoning
                 return self.forward(new_signature=signature, **kwargs)
@@ -81,13 +91,13 @@ class TypedCOTPredict(dspy.Module):
                     Always respond with complete content as per OUTPUT_SCHEMA in a valid json format.
                 """)
             self.reflect = False
-            kwargs['reflect'] = self._prepare_reflection(
+            kwargs['reflect'] = self._prepare_chemistry_reflection(
                 signature, prediction, instructions)
             return self.forward(new_signature=signature, **kwargs)
 
         return prediction
 
-    def _prepare_reflection(self, signature, prediction, instructions: str = None):
+    def _prepare_chemistry_reflection(self, signature, prediction, instructions: str = None):
         return {
             'assistant': json.dumps({
                 k: TypeAdapter(signature.output_fields[k].annotation).dump_python(
@@ -105,7 +115,7 @@ class TypedCOTPredict(dspy.Module):
     def extended_signature(self):
         return self._predict.extended_signature
 
-    def make_turns(self, signature: dspy.Signature, prediction: dspy.Prediction, **kwargs):
+    def make_chemistry_turns(self, signature: dspy.Signature, prediction: dspy.Prediction, **kwargs):
         response = {k: getattr(prediction, k)
                     for k in signature.output_fields.keys()}
         # extract inputs from **kwargs based on signature.input_fields
@@ -113,134 +123,40 @@ class TypedCOTPredict(dspy.Module):
         return [{'user': inputs, 'assistant': response}]
 
 
-class StructuredOutputAdapter(dspy.ChatAdapter):
-    def __call__(self, lm, lm_kwargs, signature, demos, inputs, _parse_values=True):
-        reflect = None
-        if 'reflect' in inputs:
-            reflect = inputs['reflect']
-
-        StructuredOutput = self.signature_to_structured_output_model(signature)
-        schema = to_strict_json_schema(StructuredOutput)
-        model_name = StructuredOutput.__name__
-        if 'openai' in lm.model and 'o1' not in lm.model:
-            lm_kwargs['response_format'] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "schema": schema,
-                    "name": model_name,
-                    "strict": True,
-                }
-            }
-            inputs = self.format(signature, demos, inputs)
-        else:
-            inputs = self.format(signature, demos, inputs,
-                                 output_schema=schema)
-
-        if reflect:
-            add_reflect_messages(inputs, reflect)
-        inputs = dict(prompt=inputs) if isinstance(
-            inputs, str) else dict(messages=inputs)
-        outputs = lm(**inputs, **lm_kwargs)
-        try:
-            results = []
-            for output in outputs:
-                results.append(self.parse(signature, output))
-            return results
-        except Exception as e:
-            raise e
-
-    def signature_to_structured_output_model(self, signature):
-        annotations = {}
-        for k, v in signature.output_fields.items():
-            if isinstance(v.annotation, type):
-                annotations[k] = v.annotation
-            else:
-                annotations[k] = str
-        return type('StructuredOutput', (BaseModel,), {'__annotations__': annotations})
-
-    def format(self, signature, demos, inputs, output_schema=None):
-        messages = []
-        is_anthropic = 'anthropic' in dspy.settings.lm.model
-
-        # Add system message with instructions
-        system_content = prepare_instructions(signature, output_schema)
-        system_content = (
-            [{'type': 'text', 'text': system_content, 'cache_control': {
-                'type': 'ephemeral'}}] if is_anthropic else system_content
-        )
-        messages.append({"role": "system", "content": system_content})
-
-        # Format chat history
-        for item in inputs.get('history', []):
-            role = "user" if "user" in item else "assistant"
-            message_text = item.get('user') or item.get('assistant')
-            if item.get('cache', False) and is_anthropic:
-                content = [{
-                    'type': 'text',
-                    'text': message_text,
-                    'cache_control': {'type': 'ephemeral'}
-                }]
-            else:
-                content = message_text
-
-            messages.append({"role": role, "content": content})
-
-        # Process and format demos
-        incomplete_demos = [
-            demo for demo in demos
-            if not all(k in demo for k in signature.fields)
-            and any(k in demo for k in signature.input_fields)
-            and any(k in demo for k in signature.output_fields)
-        ]
-        complete_demos = [
-            demo for demo in demos if demo not in incomplete_demos]
-
-        # Add demo messages in order (incomplete then complete)
-        for demo in incomplete_demos + complete_demos:
-            is_incomplete = demo in incomplete_demos
-            messages.append(format_turn(signature, demo,
-                            role="user", incomplete=is_incomplete))
-            messages.append(format_turn(signature, demo,
-                            role="assistant", incomplete=is_incomplete))
-
-        # Add final user input
-        messages.append(format_turn(signature, inputs, role="user"))
-
-        return messages
-
-    def parse(self, signature, completion):
-        completion = json.loads(completion)
-        StructuredOutput = self.signature_to_structured_output_model(signature)
-        return parse_value(completion, StructuredOutput.__annotations__)
+# ChemistryOutputAdapter class removed - was not being used in the codebase
 
 
-def format_blob(blob):
-    if '\n' not in blob and "«" not in blob and "»" not in blob:
-        return f"«{blob}»"
+def format_chemistry_content(content: str) -> str:
+    """Format chemistry content for display in structured format."""
+    if '\n' not in content and "«" not in content and "»" not in content:
+        return f"«{content}»"
 
-    modified_blob = blob.replace('\n', '\n    ')
-    return f"«««\n    {modified_blob}\n»»»"
+    modified_content = content.replace('\n', '\n    ')
+    return f"«««\n    {modified_content}\n»»»"
 
 
-def format_list(items):
+def format_chemistry_list(items: list) -> str:
+    """Format a list of chemistry-related items for display."""
     if len(items) == 0:
         return "N/A"
     if len(items) == 1:
-        return format_blob(items[0])
+        return format_chemistry_content(items[0])
 
-    return "\n".join([f"[{idx+1}] {format_blob(txt)}" for idx, txt in enumerate(items)])
+    return "\n".join([f"[{idx+1}] {format_chemistry_content(txt)}" for idx, txt in enumerate(items)])
 
 
-def format_fields(fields):
+def format_chemistry_fields(fields: dict) -> str:
+    """Format chemistry fields into structured XML format."""
     xml_structure = ""
     for k, v in fields.items():
-        v = v if not isinstance(v, list) else format_list(v)
+        v = v if not isinstance(v, list) else format_chemistry_list(v)
         xml_structure += f"\n<{k}>\n{v}\n</{k}>\n\n"
 
     return xml_structure.strip()
 
 
-def parse_value(value, annotation):
+def parse_chemistry_value(value, annotation):
+    """Parse and validate chemistry-related values according to their type annotation."""
     if annotation is str:
         return str(value)
     parsed_value = value
@@ -259,7 +175,8 @@ def parse_value(value, annotation):
     return TypeAdapter(annotation).validate_python(parsed_value)
 
 
-def format_turn(signature, values, role, incomplete=False):
+def format_chemistry_turn(signature, values, role, incomplete=False):
+    """Format a conversation turn for chemistry reasoning tasks."""
     content = []
 
     if role == "user":
@@ -275,7 +192,7 @@ def format_turn(signature, values, role, incomplete=False):
         if not set(values).issuperset(set(field_names)):
             raise ValueError(f"Expected {field_names} but got {values.keys()}")
 
-    content.append(format_fields({k: values.get(
+    content.append(format_chemistry_fields({k: values.get(
         k, "Not supplied for this particular example.") for k in field_names}))
 
     if role == "user":
@@ -285,12 +202,14 @@ def format_turn(signature, values, role, incomplete=False):
     return {"role": role, "content": '\n\n'.join(content).strip()}
 
 
-def add_reflect_messages(messages, reflect):
+def add_chemistry_reflection(messages: list, reflect: dict) -> None:
+    """Add reflection messages for chemistry reasoning improvement."""
     messages.append({"role": "assistant", "content": reflect['assistant']})
     messages.append({"role": "user", "content": reflect['user']})
 
 
-def get_annotation_name(annotation):
+def get_chemistry_annotation_name(annotation) -> str:
+    """Get a readable name for a chemistry-related type annotation."""
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin is None:
@@ -299,29 +218,27 @@ def get_annotation_name(annotation):
         else:
             return str(annotation)
     else:
-        args_str = ', '.join(get_annotation_name(arg) for arg in args)
+        args_str = ', '.join(get_chemistry_annotation_name(arg) for arg in args)
         return f"{origin.__name__}[{args_str}]"
 
 
-def enumerate_fields(fields):
+def enumerate_chemistry_fields(fields: dict) -> str:
+    """Enumerate chemistry fields with their types and descriptions."""
     xml_structure = ""
     for idx, (k, v) in enumerate(fields.items()):
-        xml_structure += f"\n<{k} id='{idx + 1}' type='{get_annotation_name(v.annotation)}'>{v.json_schema_extra['desc']}</{k}>\n\n"
+        xml_structure += f"\n<{k} id='{idx + 1}' type='{get_chemistry_annotation_name(v.annotation)}'>{v.json_schema_extra['desc']}</{k}>\n\n"
     return xml_structure.strip()
 
 
-def enumerate_json_schema_fields(fields):
-    xml_structure = ""
-    for idx, (k, v) in enumerate(fields.items()):
-        xml_structure += f"\n<{k} id='{idx + 1}'>\n{v.annotation.dump_json_schema()}\n</{k}>\n\n"
-    return xml_structure.strip()
+# enumerate_json_schema_fields function removed - was not being used in the codebase
 
 
-def prepare_instructions(signature, output_schema=None):
+def prepare_chemistry_instructions(signature, output_schema=None) -> str:
+    """Prepare instructions for chemistry reasoning tasks."""
     parts = []
     input_fields = "You will be working with the following INPUTS:\n" + \
         "<INPUTS>\n" + \
-        enumerate_fields(signature.input_fields) + "\n</INPUTS>\n\n"
+        enumerate_chemistry_fields(signature.input_fields) + "\n</INPUTS>\n\n"
 
     instructions = textwrap.dedent(signature.instructions.strip())
     objective = "\n".join([""] + instructions.splitlines())
@@ -333,8 +250,6 @@ def prepare_instructions(signature, output_schema=None):
 
     parts.append(objective)
 
-    # parts.append("Breakdown your objective reasoning with citations from INPUTS into following sections: **Key Points**, **Critical Thinking & Observations**")
-
     if output_schema:
         parts.append("You will be working with the following OUTPUT_SCHEMA:\n" +
                      "<OUTPUT_SCHEMA>\n" + json.dumps(output_schema, indent=2) + "\n</OUTPUT_SCHEMA>\n\n")
@@ -343,4 +258,5 @@ def prepare_instructions(signature, output_schema=None):
     return '\n\n'.join(parts).strip()
 
 
-dspy.TypedCOTPredict = TypedCOTPredict
+# Direct export of ChemistryReasoningModule for chemistry-focused DSPy operations
+TypedCOTPredict = ChemistryReasoningModule  # Legacy alias for any remaining compatibility needs

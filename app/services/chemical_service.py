@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.dspy_manager import is_dspy_configured
 from app.models.chemical import Chemical
 from app.schemas.chemical import ChemicalCreate, ChemicalGenerated
-from app.services.dspy_extended import TypedCOTPredict
+from app.services.dspy_extended import ChemistryReasoningModule
 from app.services.dspy_signatures import GenerateChemicalProperties
 
 
@@ -16,7 +16,7 @@ class ChemicalPropertyGenerator(dspy.Module):
 
     def __init__(self):
         super().__init__()
-        self.generate_properties = TypedCOTPredict(
+        self.generate_properties = ChemistryReasoningModule(
             GenerateChemicalProperties,
             reflect=True,
             feedback_retries=settings.dspy_retries
