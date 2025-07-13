@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.award import AwardCategory
 from app.services.award_service import AwardService, AwardServiceError
 from app.services.leaderboard_service import LeaderboardService, LeaderboardServiceError
+from app.services.notification_service import NotificationService, NotificationServiceError
 from app.schemas.award import (
     UserAwardSchema,
     AvailableAwardSchema,
@@ -450,4 +451,179 @@ async def get_community_statistics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while retrieving community statistics"
+        )
+
+
+@router.get("/dashboard/stats")
+async def get_dashboard_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Get comprehensive dashboard statistics for the current user.
+    
+    Returns statistics about user's awards, progress, and achievements.
+    """
+    try:
+        notification_service = NotificationService(db)
+        stats = await notification_service.get_dashboard_stats(current_user.id)
+        
+        return {
+            "user_id": current_user.id,
+            "username": current_user.username,
+            "dashboard_stats": stats
+        }
+        
+    except NotificationServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve dashboard stats: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while retrieving dashboard stats"
+        )
+
+
+@router.get("/dashboard/recent")
+async def get_recent_awards(
+    days_back: int = Query(7, ge=1, le=30, description="Number of days back to look for awards"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of awards to return"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Get recent awards for the current user.
+    
+    Returns awards earned within the specified timeframe.
+    """
+    try:
+        notification_service = NotificationService(db)
+        recent_awards = await notification_service.get_recent_awards(
+            user_id=current_user.id,
+            limit=limit,
+            days_back=days_back
+        )
+        
+        return {
+            "user_id": current_user.id,
+            "recent_awards": recent_awards,
+            "days_back": days_back,
+            "total_count": len(recent_awards)
+        }
+        
+    except NotificationServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve recent awards: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while retrieving recent awards"
+        )
+
+
+@router.get("/dashboard/progress")
+async def get_award_progress(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Get current user's progress toward unearned awards.
+    
+    Returns progress information including category breakdowns and next milestones.
+    """
+    try:
+        notification_service = NotificationService(db)
+        progress = await notification_service.get_award_progress(current_user.id)
+        
+        return {
+            "user_id": current_user.id,
+            "progress": progress
+        }
+        
+    except NotificationServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve award progress: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while retrieving award progress"
+        )
+
+
+@router.get("/notifications")
+async def get_award_notifications(
+    unread_only: bool = Query(True, description="Only return unread notifications"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Get award notifications for the current user.
+    
+    Returns notifications about recent awards and achievements.
+    """
+    try:
+        notification_service = NotificationService(db)
+        notifications = await notification_service.get_award_notifications(
+            user_id=current_user.id,
+            unread_only=unread_only
+        )
+        
+        return {
+            "user_id": current_user.id,
+            "notifications": notifications,
+            "unread_only": unread_only,
+            "total_count": len(notifications)
+        }
+        
+    except NotificationServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve notifications: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while retrieving notifications"
+        )
+
+
+@router.post("/notifications/read")
+async def mark_notifications_read(
+    notification_ids: List[str],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """
+    Mark specific notifications as read.
+    
+    Accepts a list of notification IDs to mark as read.
+    """
+    try:
+        notification_service = NotificationService(db)
+        success = await notification_service.mark_notifications_read(
+            user_id=current_user.id,
+            notification_ids=notification_ids
+        )
+        
+        return {
+            "success": success,
+            "marked_count": len(notification_ids),
+            "message": f"Marked {len(notification_ids)} notifications as read"
+        }
+        
+    except NotificationServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to mark notifications as read: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while marking notifications as read"
         )

@@ -11,6 +11,7 @@ import logging
 
 from app.models.award import AwardTemplate, UserAward, AwardCategory
 from app.models.user import User
+from app.models.audit_log import AuditAction
 from app.services.award_evaluator import AwardEvaluator, AwardEvaluationError
 from app.services.award_template_service import AwardTemplateService
 
@@ -48,6 +49,7 @@ class AwardService:
         self.db = db
         self.evaluator = AwardEvaluator(db)
         self.template_service = AwardTemplateService(db)
+        self.audit_service = None  # Will be set if needed
     
     async def evaluate_discovery_awards(
         self, 
@@ -258,12 +260,130 @@ class AwardService:
                 f"Granted award {template.name} (tier {tier}) to user {user_id}"
             )
             
+            # Log the award granting action
+            try:
+                if self.audit_service:
+                    await self.audit_service.log_action(
+                        action=AuditAction.AWARD_GRANTED,
+                        user_id=user_id,
+                        entity_type="award",
+                        entity_id=award.id,
+                        details={
+                            "template_id": template_id,
+                            "template_name": template.name,
+                            "tier": tier,
+                            "category": template.category.value
+                        }
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to log award grant action: {e}")
+            
             return award
             
         except Exception as e:
             self.db.rollback()
             logger.error(f"Failed to grant award {template_id} to user {user_id}: {e}")
             raise AwardGrantError(f"Failed to grant award: {e}")
+    
+    async def grant_manual_award(
+        self,
+        user_id: int,
+        template_id: int,
+        tier: int,
+        reason: str,
+        granted_by: int,
+        related_entity_type: Optional[str] = None,
+        related_entity_id: Optional[int] = None
+    ) -> UserAward:
+        """
+        Manually grant an award to a user (admin functionality).
+        
+        Args:
+            user_id: ID of the user to grant the award to
+            template_id: ID of the award template
+            tier: Tier level to grant
+            reason: Reason for manual granting
+            granted_by: ID of the admin granting the award
+            related_entity_type: Optional related entity type
+            related_entity_id: Optional related entity ID
+            
+        Returns:
+            The granted UserAward instance
+            
+        Raises:
+            AwardGrantError: If award granting fails
+        """
+        try:
+            # Verify user exists
+            user = self.db.exec(select(User).where(User.id == user_id)).first()
+            if not user:
+                raise AwardGrantError(f"User {user_id} not found")
+            
+            # Get award template
+            template = await self.template_service.get_template(template_id)
+            if not template:
+                raise AwardGrantError(f"Award template {template_id} not found")
+            
+            # Check if user already has this award
+            existing_award = await self._get_user_award(user_id, template_id)
+            if existing_award:
+                raise AwardGrantError(
+                    f"User {user_id} already has award {template_id}"
+                )
+            
+            # Create manual award record with custom progress
+            progress = {
+                "manual_grant": True,
+                "reason": reason,
+                "granted_by": granted_by,
+                "granted_at": datetime.utcnow().isoformat()
+            }
+            
+            award = UserAward(
+                user_id=user_id,
+                template_id=template_id,
+                tier=tier,
+                progress=progress,
+                granted_at=datetime.utcnow(),
+                related_entity_type=related_entity_type,
+                related_entity_id=related_entity_id
+            )
+            
+            self.db.add(award)
+            self.db.commit()
+            self.db.refresh(award)
+            
+            logger.info(
+                f"Manually granted award {template.name} (tier {tier}) to user {user_id} "
+                f"by admin {granted_by}. Reason: {reason}"
+            )
+            
+            # Log the manual award granting action
+            try:
+                if self.audit_service:
+                    await self.audit_service.log_action(
+                        action=AuditAction.AWARD_MANUAL_GRANT,
+                        user_id=granted_by,
+                        target_user_id=user_id,
+                        entity_type="award",
+                        entity_id=award.id,
+                        details={
+                            "template_id": template_id,
+                            "template_name": template.name,
+                            "tier": tier,
+                            "reason": reason,
+                            "category": template.category.value
+                        }
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to log manual award grant action: {e}")
+            
+            return award
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to manually grant award {template_id} to user {user_id}: {e}")
+            raise AwardGrantError(f"Failed to grant manual award: {e}")
     
     async def get_user_awards(
         self,
@@ -416,7 +536,8 @@ class AwardService:
     async def revoke_award(
         self, 
         award_id: int, 
-        reason: Optional[str] = None
+        reason: Optional[str] = None,
+        revoked_by: Optional[int] = None
     ) -> bool:
         """
         Revoke an award (admin functionality).
@@ -424,6 +545,7 @@ class AwardService:
         Args:
             award_id: ID of the award to revoke
             reason: Optional reason for revocation
+            revoked_by: ID of admin who revoked the award
             
         Returns:
             True if revocation was successful
@@ -444,9 +566,28 @@ class AwardService:
             self.db.delete(award)
             self.db.commit()
             
+            revoked_by_text = f" by admin {revoked_by}" if revoked_by else ""
             logger.info(
-                f"Revoked award {award_id} from user {award.user_id}. Reason: {reason}"
+                f"Revoked award {award_id} from user {award.user_id}{revoked_by_text}. Reason: {reason}"
             )
+            
+            # Log the award revocation action
+            try:
+                if self.audit_service:
+                    await self.audit_service.log_action(
+                        action=AuditAction.AWARD_REVOKED,
+                        user_id=revoked_by,
+                        target_user_id=award.user_id,
+                        entity_type="award",
+                        entity_id=award_id,
+                        details={
+                            "template_id": award.template_id,
+                            "reason": reason,
+                            "tier": award.tier
+                        }
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to log award revocation action: {e}")
             
             return True
             

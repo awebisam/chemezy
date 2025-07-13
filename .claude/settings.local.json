@@ -7,7 +7,9 @@
       "Bash(rm:*)",
       "Bash(mkdir:*)",
       "Bash(touch:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic revision:*)"
     ],
     "deny": []
   }

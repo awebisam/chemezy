@@ -13,6 +13,7 @@ from functools import lru_cache
 
 from app.models.award import AwardTemplate, UserAward, AwardCategory
 from app.models.user import User
+from app.services.cache_service import leaderboard_cache
 
 
 logger = logging.getLogger(__name__)
@@ -54,10 +55,10 @@ class LeaderboardService:
             List of user rankings with award statistics
         """
         try:
-            cache_key = f"leaderboard_{category.value}_{limit}_{include_ties}"
-            
             # Check cache first
-            cached_result = self._get_cached_result(cache_key)
+            cached_result = leaderboard_cache.get_category_leaderboard(
+                category.value, limit
+            )
             if cached_result:
                 return cached_result
             
@@ -136,7 +137,9 @@ class LeaderboardService:
                         break
             
             # Cache the result
-            self._cache_result(cache_key, leaderboard)
+            leaderboard_cache.set_category_leaderboard(
+                category.value, limit, leaderboard
+            )
             
             return leaderboard
             
