@@ -73,7 +73,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": settings.app_name}
+    return Response(status_code=200)
 
 
 @app.exception_handler(Exception)
