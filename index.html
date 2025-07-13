@@ -1,776 +1,887 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemezy Advanced Interface</title>
+    <title>Chemezy: The Virtual Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* === ROOT VARIABLES for a professional, modern theme === */
+        [x-cloak] { display: none !important; }
+        
+        /* Clean, modern educational theme */
         :root {
-            --color-primary: #3b82f6; /* blue-500 */
-            --color-primary-dark: #2563eb; /* blue-600 */
-            --color-secondary: #8b5cf6; /* violet-500 */
-            --color-accent: #10b981; /* emerald-500 */
-            --color-warning: #f59e0b; /* amber-500 */
-            --color-error: #ef4444; /* red-500 */
-            --color-success: #22c55e; /* green-500 */
-            
-            --color-bg-primary: #0f172a; /* slate-900 */
-            --color-bg-secondary: #1e293b; /* slate-800 */
-            --color-bg-tertiary: #334155; /* slate-700 */
-            --color-bg-input: #334155; /* slate-700 */
-            
-            --color-text-primary: #f8fafc; /* slate-50 */
-            --color-text-secondary: #cbd5e1; /* slate-300 */
-            --color-text-muted: #94a3b8; /* slate-400 */
-            --color-text-placeholder: #64748b; /* slate-500 */
-            
-            --color-border: #475569; /* slate-600 */
-            --color-border-light: #64748b; /* slate-500 */
-            
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-            
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-            
-            --transition: all 0.2s ease-in-out;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --muted: #64748b;
         }
 
-        /* === GLOBAL STYLES === */
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--color-bg-primary);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
         }
 
-        /* === GLASSMORPHISM EFFECTS === */
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            box-shadow: var(--shadow-lg);
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
 
-        /* === BUTTON SYSTEM === */
-        .btn {
-            padding: 0.625rem 1.25rem;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes chemicalDrop {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(0) rotate(360deg); opacity: 1; }
+        }
+
+        @keyframes bubbleUp {
+            0% { bottom: 10%; opacity: 0; transform: translateX(0); }
+            20% { opacity: 1; }
+            100% { bottom: 90%; opacity: 0; transform: translateX(20px); }
+        }
+
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .slide-up { animation: slideUp 0.5s ease-out; }
+        .chemical-drop { animation: chemicalDrop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+
+        /* Glass morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Chemical element cards */
+        .chemical-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .chemical-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .chemical-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        /* Reaction beaker animation */
+        .beaker {
+            position: relative;
+            width: 200px;
+            height: 250px;
+            margin: 0 auto;
+        }
+
+        .beaker-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            background: linear-gradient(to top, #3b82f6, #8b5cf6);
+            border-radius: 0 0 20px 20px;
+            transition: height 0.5s ease;
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            animation: bubbleUp 3s infinite;
+        }
+
+        /* Notification styles */
+        .notification-enter {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Discovery effect */
+        .world-first-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 0 0 50px rgba(251, 191, 36, 0.8);
+            animation: worldFirstPulse 2s ease-out;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes worldFirstPulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        /* Periodic table mini-view */
+        .element-symbol {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-success { background: var(--color-success); color: white; }
-        .btn-error { background: var(--color-error); color: white; }
-        .btn-warning { background: var(--color-warning); color: white; }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
-
-        /* === FORM INPUTS === */
-        .input {
-            background: var(--color-bg-input);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            padding: 0.75rem 1rem;
-            color: var(--color-text-primary);
-            transition: var(--transition);
-            width: 100%;
-        }
-
-        .input:focus {
-            outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .input::placeholder { color: var(--color-text-placeholder); }
-
-        /* === CARDS === */
-        .card {
-            background: var(--color-bg-secondary);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-md);
-            transition: var(--transition);
-        }
-        
-        /* FIX: This specific card needs to allow its children (dropdowns) to be visible outside its bounds */
-        .reaction-simulator-card {
-            overflow: visible;
-        }
-
-        .card-header {
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .card-title {
-            color: var(--color-text-primary);
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        /* === CHOICES.JS CUSTOM STYLING === */
-        .choices { z-index: 10; }
-        .choices.is-open { z-index: 20; }
-
-        .choices__inner {
-            background: var(--color-bg-input);
-            border: 1px solid var(--color-border);
-            color: var(--color-text-primary);
-            border-radius: var(--radius-md);
-            min-height: 44px;
-            padding: 0.5rem 1rem;
-            transition: var(--transition);
-        }
-
-        .is-focused .choices__inner {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .choices__list--dropdown, .choices__list[aria-expanded] {
-            background: var(--color-bg-secondary);
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-xl);
-            margin-top: 4px;
-        }
-
-        .choices__list--single .choices__item { color: var(--color-text-primary); }
-
-        .choices__option {
-            color: var(--color-text-secondary);
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--color-border);
-        }
-        
-        .choices__option:last-child { border-bottom: none; }
-
-        /* FIX: Correctly style highlighted dropdown items for readability */
-        .choices__list--dropdown .choices__item--selectable.is-highlighted {
-            background-color: var(--color-primary);
-            color: white;
-        }
-        
-        .choices__placeholder { color: var(--color-text-placeholder); opacity: 1; }
-        .choices[data-type*="select-one"]::after { border-color: var(--color-text-secondary) transparent transparent; }
-
-        /* === SCROLLBAR === */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--color-bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--color-border-light); }
-
-        /* === ANIMATIONS === */
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .notification-animation { animation: slideIn 0.5s ease-out forwards; }
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-
-        /* === PROGRESS BAR === */
-        .progress-bar { background: var(--color-bg-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
-        .progress-bar-inner {
-            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-            height: 100%;
-            transition: width 0.5s ease-in-out;
-            text-align: center;
-            color: white;
+        .element-symbol .number {
             font-size: 0.75rem;
-            line-height: 1rem;
-            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        .element-symbol .symbol {
+            font-size: 1.5rem;
         }
     </style>
-     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-
-<body class="bg-gray-900 text-gray-200 font-sans antialiased">
-
-    <!-- Notification Container -->
-    <div id="notification-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
+<body x-data="chemezyApp()" x-init="init()">
+    <!-- Loading Screen -->
+    <div x-show="loading" x-cloak 
+         class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="beaker mb-8">
+                <svg viewBox="0 0 200 250" class="w-full h-full">
+                    <path d="M50 20 L50 180 Q50 220 90 220 L110 220 Q150 220 150 180 L150 20" 
+                          stroke="#3b82f6" stroke-width="3" fill="none"/>
+                    <rect x="40" y="10" width="120" height="20" rx="10" fill="#3b82f6"/>
+                </svg>
+                <div class="beaker-liquid" :style="`height: ${loadingProgress}%`">
+                    <div class="bubble" style="left: 20%; animation-delay: 0s;"></div>
+                    <div class="bubble" style="left: 50%; animation-delay: 1s;"></div>
+                    <div class="bubble" style="left: 80%; animation-delay: 2s;"></div>
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Preparing Your Virtual Lab...</h2>
+            <p class="text-gray-400">Loading chemical compounds</p>
+        </div>
+    </div>
 
     <!-- Auth Modal -->
-    <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-40">
-        <div class="glass p-8 rounded-lg w-full max-w-sm fade-in">
-            <h2 class="text-white text-2xl font-bold mb-6 text-center">Welcome to Chemezy</h2>
-            <div class="space-y-4">
-                <input type="text" id="username" placeholder="Username" class="input">
-                <input type="password" id="password" placeholder="Password" class="input">
-                <button id="login-btn" class="btn btn-primary w-full">Login</button>
+    <div x-show="!isAuthenticated" x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full slide-up">
+            <div class="text-center mb-8">
+                <div class="element-symbol mx-auto mb-4 float-animation">
+                    <span class="number">6</span>
+                    <span class="symbol">C</span>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">Welcome to Chemezy</h1>
+                <p class="text-gray-400">Your Virtual Chemistry Laboratory</p>
             </div>
+            
+            <form @submit.prevent="handleLogin" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                    <input type="text" x-model="loginForm.username" 
+                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                           placeholder="Enter your username" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                    <input type="password" x-model="loginForm.password" 
+                           class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                           placeholder="Enter your password" required>
+                </div>
+                <button type="submit" 
+                        class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105"
+                        :disabled="loginForm.loading">
+                    <span x-show="!loginForm.loading">Start Experimenting</span>
+                    <span x-show="loginForm.loading">Logging in...</span>
+                </button>
+            </form>
+            
+            <p class="text-center text-gray-400 text-sm mt-6">
+                New to chemistry? Use demo/demo to explore!
+            </p>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="app-section" class="hidden">
-        <header class="glass p-4 flex justify-between items-center border-b border-border-light sticky top-0 z-30">
-            <h1 class="text-2xl font-bold text-white">Chemezy Dashboard</h1>
-            <div class="flex items-center space-x-4">
-                <div class="text-sm text-text-secondary">Logged in as: <span id="user-display" class="font-semibold text-primary"></span></div>
-                <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
+    <div x-show="isAuthenticated" x-cloak class="min-h-screen">
+        <!-- Header -->
+        <header class="glass border-b border-white/10 sticky top-0 z-30">
+            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="element-symbol w-12 h-12">
+                        <span class="symbol text-lg">Cz</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Chemezy Lab</h1>
+                        <p class="text-sm text-gray-400">Experiment • Discover • Learn</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <button @click="showTutorial = true" 
+                            class="text-gray-300 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </button>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Scientist</p>
+                        <p class="font-semibold text-white" x-text="username"></p>
+                    </div>
+                    <button @click="logout" 
+                            class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                        Logout
+                    </button>
+                </div>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-            <!-- Main Content Column -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- FIX: Added 'reaction-simulator-card' class to apply overflow fix -->
-                <div class="card fade-in reaction-simulator-card">
-                    <div class="card-header"><h2 class="card-title">Reaction Simulator</h2></div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block mb-2 font-semibold text-text-secondary">Reactants</label>
-                            <div id="reactants-list" class="space-y-2"></div>
-                            <button id="add-reactant-btn" class="mt-2 btn btn-success btn-sm">+ Add Reactant</button>
+        <!-- Main Content -->
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Lab Workspace (2 columns) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Quick Add Chemical -->
+                    <div class="glass rounded-xl p-6 slide-up">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Quick Add Chemical
+                        </h2>
+                        <div class="flex space-x-2">
+                            <input type="text" x-model="newChemical" 
+                                   @keyup.enter="addChemical"
+                                   placeholder="Enter molecular formula (e.g., H2O, NaCl, C6H12O6)"
+                                   class="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none">
+                            <button @click="addChemical" 
+                                    class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all">
+                                Add to Lab
+                            </button>
                         </div>
-                        <div>
-                            <label for="catalyst-selector" class="block mb-2 font-semibold text-text-secondary">Catalyst (Optional)</label>
-                            <select id="catalyst-selector"></select>
+                    </div>
+
+                    <!-- Virtual Lab Bench -->
+                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.1s;">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                            </svg>
+                            Virtual Lab Bench
+                        </h2>
+                        
+                        <!-- Reaction Setup -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">Drag chemicals here to start reaction</label>
+                            <div @drop="handleDrop($event)" 
+                                 @dragover.prevent
+                                 @dragenter.prevent
+                                 class="min-h-[200px] bg-slate-800/30 border-2 border-dashed border-slate-600 rounded-lg p-4 transition-all"
+                                 :class="{'border-blue-500 bg-blue-500/10': isDragging}">
+                                
+                                <!-- Beaker Animation -->
+                                <div class="beaker mx-auto" x-show="reactants.length > 0">
+                                    <svg viewBox="0 0 200 250" class="w-full h-full">
+                                        <path d="M50 20 L50 180 Q50 220 90 220 L110 220 Q150 220 150 180 L150 20" 
+                                              stroke="#3b82f6" stroke-width="3" fill="none"/>
+                                        <rect x="40" y="10" width="120" height="20" rx="10" fill="#3b82f6"/>
+                                    </svg>
+                                    <div class="beaker-liquid" :style="`height: ${reactants.length * 30}%`">
+                                        <template x-for="i in reactants.length" :key="i">
+                                            <div class="bubble" :style="`left: ${20 + i * 30}%; animation-delay: ${i * 0.5}s;`"></div>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Reactants Display -->
+                                <div class="mt-4 flex flex-wrap gap-2 justify-center" x-show="reactants.length > 0">
+                                    <template x-for="(reactant, index) in reactants" :key="index">
+                                        <div class="chemical-card px-4 py-2 rounded-lg flex items-center space-x-2 chemical-drop">
+                                            <span class="font-semibold text-white" x-text="reactant.molecular_formula"></span>
+                                            <button @click="removeReactant(index)" class="text-red-400 hover:text-red-300">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <p x-show="reactants.length === 0" class="text-center text-gray-500 mt-8">
+                                    Drop chemicals here to begin experimenting
+                                </p>
+                            </div>
                         </div>
-                        <button id="run-reaction-btn" class="btn btn-primary w-full">Run Reaction</button>
+                        
+                        <!-- Catalyst Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Catalyst (Optional)</label>
+                            <select x-model="selectedCatalyst" 
+                                    class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                                <option value="">No catalyst</option>
+                                <template x-for="chemical in chemicals" :key="chemical.id">
+                                    <option :value="chemical.id" x-text="`${chemical.molecular_formula} ${chemical.common_name ? '(' + chemical.common_name + ')' : ''}`"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <!-- Run Reaction Button -->
+                        <button @click="runReaction" 
+                                :disabled="reactants.length === 0 || isReacting"
+                                class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg transition-all transform disabled:opacity-50 disabled:cursor-not-allowed"
+                                :class="{'hover:scale-105 pulse-glow': reactants.length > 0 && !isReacting}">
+                            <span x-show="!isReacting">Start Reaction</span>
+                            <span x-show="isReacting" class="flex items-center justify-center">
+                                <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Reacting...
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Results Panel -->
+                    <div x-show="lastReaction" x-cloak class="glass rounded-xl p-6 slide-up">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Reaction Results
+                        </h2>
+                        
+                        <div x-show="lastReaction.is_world_first" class="mb-4 p-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                            <p class="text-yellow-400 font-bold text-lg">🏆 World-First Discovery!</p>
+                            <p class="text-yellow-300 text-sm">You're the first to create this reaction!</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-semibold text-gray-300 mb-2">Explanation</h3>
+                                <p class="text-white bg-slate-800/50 p-4 rounded-lg" x-text="lastReaction.explanation"></p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-semibold text-gray-300 mb-2">Products</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <template x-for="product in lastReaction.products" :key="product.chemical_id">
+                                        <div class="chemical-card p-3 rounded-lg text-center">
+                                            <p class="font-bold text-white" x-text="product.molecular_formula"></p>
+                                            <p class="text-sm text-gray-400">Qty: <span x-text="product.quantity.toFixed(2)"></span></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
+                                <h3 class="font-semibold text-gray-300 mb-2">Visual Effects</h3>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
+                                        <span class="px-3 py-1 rounded-full text-sm"
+                                              :style="`background-color: ${effect.color}20; color: ${effect.color}; border: 1px solid ${effect.color}50;`">
+                                            <span x-text="effect.effect_type"></span> • 
+                                            <span x-text="`Intensity: ${effect.intensity}`"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                 <div class="card fade-in h-full flex flex-col">
-                    <div class="card-header"><h2 class="card-title">Results & Logs</h2></div>
-                    <div id="results-output" class="prose prose-invert max-w-none text-text-secondary flex-grow overflow-y-auto pr-2">
-                        <p>Run a reaction or a debug command to see the output here.</p>
+
+                <!-- Right Sidebar -->
+                <div class="space-y-6">
+                    <!-- Chemical Inventory -->
+                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.2s;">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            Chemical Inventory
+                        </h2>
+                        <div class="mb-4">
+                            <input type="text" x-model="chemicalSearch" 
+                                   placeholder="Search chemicals..."
+                                   class="w-full px-3 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                            <template x-for="chemical in filteredChemicals" :key="chemical.id">
+                                <div draggable="true" 
+                                     @dragstart="startDrag($event, chemical)"
+                                     @dragend="endDrag"
+                                     class="chemical-card p-3 rounded-lg cursor-move">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-semibold text-white" x-text="chemical.molecular_formula"></p>
+                                            <p class="text-sm text-gray-400" x-text="chemical.common_name || 'Unknown compound'"></p>
+                                        </div>
+                                        <div class="element-symbol w-10 h-10" x-show="chemical.molecular_formula.length <= 3">
+                                            <span class="symbol text-sm" x-text="chemical.molecular_formula"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
+
+                    <!-- Achievements -->
+                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.3s;">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                            </svg>
+                            Achievements
+                        </h2>
+                        <div class="space-y-3 max-h-80 overflow-y-auto">
+                            <template x-for="award in myAwards" :key="award.id">
+                                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="font-semibold text-yellow-400" x-text="award.template.name"></p>
+                                        <span class="text-xs text-gray-400">Tier <span x-text="award.tier"></span></span>
+                                    </div>
+                                    <p class="text-sm text-gray-300" x-text="award.template.description"></p>
+                                </div>
+                            </template>
+                            <p x-show="myAwards.length === 0" class="text-center text-gray-500 py-4">
+                                Start experimenting to earn achievements!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Leaderboard -->
+                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.4s;">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Leaderboard
+                        </h2>
+                        <div class="mb-3">
+                            <select x-model="selectedLeaderboardCategory" 
+                                    @change="fetchLeaderboard"
+                                    class="w-full px-3 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none">
+                                <option value="discovery">Discoveries</option>
+                                <option value="database_contribution">Contributions</option>
+                                <option value="achievement">Achievements</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <template x-for="(entry, index) in leaderboard" :key="entry.user_id">
+                                <div class="flex items-center justify-between p-2 rounded bg-slate-800/30"
+                                     :class="{'bg-gradient-to-r from-yellow-500/20 to-orange-500/20': index === 0}">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="font-bold text-gray-400" x-text="`#${entry.rank}`"></span>
+                                        <span class="text-white" x-text="entry.username"></span>
+                                    </div>
+                                    <span class="font-semibold text-blue-400" x-text="`${entry.total_points} pts`"></span>
+                                </div>
+                            </template>
+                            <p x-show="leaderboard.length === 0" class="text-center text-gray-500 py-4">
+                                No data available
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div x-show="showTutorial" @click.away="showTutorial = false" x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="glass rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto slide-up">
+            <h2 class="text-2xl font-bold text-white mb-6">How to Use Chemezy Lab</h2>
+            
+            <div class="space-y-6 text-gray-300">
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-2">1. Add Chemicals</h3>
+                    <p>Start by adding chemicals to your inventory using the Quick Add feature. Enter molecular formulas like H2O, NaCl, or C6H12O6.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-2">2. Drag & Drop</h3>
+                    <p>Drag chemicals from your inventory to the Virtual Lab Bench. You can combine multiple chemicals to see what happens!</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-2">3. Run Reactions</h3>
+                    <p>Click "Start Reaction" to see what happens. The system will show you the products, effects, and educational explanations.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-2">4. Discover & Learn</h3>
+                    <p>Make world-first discoveries and earn achievements! Each reaction comes with detailed explanations to help you understand the chemistry.</p>
+                </div>
+                
+                <div class="bg-blue-500/20 p-4 rounded-lg border border-blue-500/30">
+                    <p class="text-sm"><strong>Pro tip:</strong> Try adding a catalyst to speed up reactions or change their outcomes!</p>
                 </div>
             </div>
             
-            <!-- Sidebar Column -->
-            <div class="lg:col-span-1 space-y-6">
-                 <div class="card fade-in">
-                    <div class="card-header"><h2 class="card-title">Add New Chemical</h2></div>
-                    <div class="space-y-4">
-                        <input type="text" id="chemical-formula" placeholder="e.g., C6H12O6" class="input">
-                        <button id="add-chemical-btn" class="btn btn-success w-full">Add Chemical</button>
-                    </div>
-                </div>
-                <div class="card fade-in">
-                    <div class="card-header"><h2 class="card-title">Awards & Progress</h2></div>
-                    <div id="awards-dashboard" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
-                </div>
-                <div class="card fade-in">
-                    <div class="card-header"><h2 class="card-title">Leaderboard</h2></div>
-                    <div class="flex space-x-2 mb-4">
-                        <select id="leaderboard-category-selector" class="flex-grow"></select>
-                        <button id="fetch-leaderboard-btn" class="btn btn-primary btn-sm">Fetch</button>
-                    </div>
-                    <div id="leaderboard-output" class="text-sm max-h-60 overflow-y-auto pr-2 text-text-secondary"></div>
-                </div>
-                <div class="card fade-in">
-                    <div class="card-header"><h2 class="card-title">Debug Zone</h2></div>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="font-semibold mb-2 text-text-secondary">Request Item Deletion</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="delete-chemical-selector" class="block text-sm mb-1 text-text-muted">Chemical</label>
-                                    <select id="delete-chemical-selector"></select>
-                                </div>
-                                <div>
-                                    <label for="delete-reaction-selector" class="block text-sm mb-1 text-text-muted">Reaction</label>
-                                    <select id="delete-reaction-selector"></select>
-                                </div>
-                            </div>
-                            <textarea id="delete-reason" placeholder="Reason for deletion..." class="mt-2 input text-sm h-20"></textarea>
-                            <button id="request-delete-btn" class="mt-2 btn btn-warning w-full btn-sm">Request Deletion</button>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold mb-2 text-text-secondary">Clear Database Collections</h3>
-                            <div class="flex space-x-4">
-                                <button id="clear-chemicals-btn" class="btn btn-error w-full">Clear Chemicals</button>
-                                <button id="clear-reactions-btn" class="btn btn-error w-full">Clear Reactions</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+            <button @click="showTutorial = false" 
+                    class="mt-6 w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
+                Start Experimenting!
+            </button>
+        </div>
     </div>
 
-    <!-- Template for a single reactant row -->
-    <template id="reactant-row-template">
-        <div class="flex items-center space-x-2 reactant-row fade-in">
-            <select class="reactant-selector flex-grow"></select>
-            <button class="remove-reactant-btn btn btn-error btn-sm">X</button>
-        </div>
-    </template>
+    <!-- Notifications -->
+    <div class="fixed top-4 right-4 z-50 space-y-2">
+        <template x-for="(notification, index) in notifications" :key="notification.id">
+            <div class="notification-enter glass rounded-lg px-6 py-4 min-w-[300px] cursor-pointer"
+                 @click="removeNotification(index)"
+                 :class="{
+                     'border-green-500/50': notification.type === 'success',
+                     'border-red-500/50': notification.type === 'error',
+                     'border-blue-500/50': notification.type === 'info',
+                     'border-yellow-500/50': notification.type === 'warning'
+                 }">
+                <p class="font-semibold" 
+                   :class="{
+                       'text-green-400': notification.type === 'success',
+                       'text-red-400': notification.type === 'error',
+                       'text-blue-400': notification.type === 'info',
+                       'text-yellow-400': notification.type === 'warning'
+                   }"
+                   x-text="notification.title"></p>
+                <p class="text-sm text-gray-300" x-text="notification.message"></p>
+            </div>
+        </template>
+    </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- MODULE: State Management ---
-        const State = {
-            authToken: null,
-            username: null,
-            chemicals: [],
-            reactions: [],
-            myAwards: [],
-            availableAwards: [],
-            awardCategories: ["discovery", "database_contribution", "community", "special", "achievement"],
-            choicesInstances: {},
-            saveToStorage() {
-                if (this.authToken && this.username) {
-                    localStorage.setItem('chemezy_auth_token', this.authToken);
-                    localStorage.setItem('chemezy_username', this.username);
-                }
-            },
-            loadFromStorage() {
-                const token = localStorage.getItem('chemezy_auth_token');
-                const username = localStorage.getItem('chemezy_username');
-                if (token && username) {
-                    this.authToken = token;
-                    this.username = username;
-                    return true;
-                }
-                return false;
-            },
-            clearStorage() {
-                localStorage.removeItem('chemezy_auth_token');
-                localStorage.removeItem('chemezy_username');
-                this.authToken = null;
-                this.username = null;
-            }
-        };
+    <!-- World First Discovery Effect -->
+    <div x-show="showWorldFirstEffect" x-cloak class="world-first-effect">
+        🏆 WORLD FIRST! 🏆
+    </div>
 
-        // --- MODULE: UI Elements ---
-        const UI = {
-            notificationContainer: document.getElementById('notification-container'),
-            authModal: document.getElementById('auth-modal'),
-            loginBtn: document.getElementById('login-btn'),
-            logoutBtn: document.getElementById('logout-btn'),
-            usernameInput: document.getElementById('username'),
-            passwordInput: document.getElementById('password'),
-            appSection: document.getElementById('app-section'),
-            userDisplay: document.getElementById('user-display'),
-            reactantsList: document.getElementById('reactants-list'),
-            addReactantBtn: document.getElementById('add-reactant-btn'),
-            runReactionBtn: document.getElementById('run-reaction-btn'),
-            resultsOutput: document.getElementById('results-output'),
-            reactantRowTemplate: document.getElementById('reactant-row-template'),
-            awardsDashboard: document.getElementById('awards-dashboard'),
-            leaderboardCategorySelector: document.getElementById('leaderboard-category-selector'),
-            fetchLeaderboardBtn: document.getElementById('fetch-leaderboard-btn'),
-            leaderboardOutput: document.getElementById('leaderboard-output'),
-            clearChemicalsBtn: document.getElementById('clear-chemicals-btn'),
-            clearReactionsBtn: document.getElementById('clear-reactions-btn'),
-            requestDeleteBtn: document.getElementById('request-delete-btn'),
-            deleteReason: document.getElementById('delete-reason'),
-            addChemicalBtn: document.getElementById('add-chemical-btn'),
-            chemicalFormulaInput: document.getElementById('chemical-formula'),
-        };
-
-        // --- MODULE: API Service ---
-        const API = {
-            BASE_URL: '/api/v1',
-            async _request(endpoint, options = {}) {
-                const headers = { 'Content-Type': 'application/json', ...options.headers };
-                if (State.authToken) {
-                    headers['Authorization'] = `Bearer ${State.authToken}`;
-                }
-                const response = await fetch(`${this.BASE_URL}${endpoint}`, { ...options, headers });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
-                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-                }
-                if (response.status === 204) return null;
-                return response.json();
-            },
-            login(username, password) {
-                const formData = new URLSearchParams();
-                formData.append('username', username);
-                formData.append('password', password);
-                return this._request('/auth/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
-            },
-            getChemicals: () => API._request('/chemicals/'),
-            createChemical: (body) => API._request('/chemicals/', { method: 'POST', body: JSON.stringify(body) }),
-            getReactions: () => API._request('/reactions/cache'),
-            runReaction: (body) => API._request('/reactions/react', { method: 'POST', body: JSON.stringify(body) }),
-            getMyAwards: () => API._request('/awards/me'),
-            getAvailableAwards: () => API._request('/awards/available'),
-            getLeaderboard: (category) => API._request(`/awards/leaderboard/${category}`),
-            clearAllChemicals: () => API._request('/debug/chemicals/clear', { method: 'DELETE' }),
-            clearAllReactions: () => API._request('/debug/reactions/clear', { method: 'DELETE' }),
-            requestDelete: (type, id, reason) => API._request(`/debug/${type}/${id}`, { method: 'DELETE', body: JSON.stringify({ reason }) }),
-        };
-
-        // --- MODULE: UI Renderer ---
-        const Renderer = {
-            showNotification(message, type = 'info') {
-                const colors = { info: 'bg-blue-600', success: 'bg-green-600', error: 'bg-red-600' };
-                const notif = document.createElement('div');
-                notif.className = `text-white py-2 px-4 rounded-lg shadow-lg notification-animation ${colors[type]}`;
-                notif.textContent = message;
-                UI.notificationContainer.appendChild(notif);
-                setTimeout(() => {
-                    notif.style.opacity = '0';
-                    notif.style.transition = 'opacity 0.5s';
-                    setTimeout(() => notif.remove(), 500);
-                }, 4000);
-            },
-            renderGenericResults(title, data) {
-                let content = `<h3 class="font-bold text-white mb-2">${title}</h3>`;
-                content += `<pre class="whitespace-pre-wrap text-sm bg-gray-900 p-3 rounded-md">${JSON.stringify(data, null, 2)}</pre>`;
-                UI.resultsOutput.innerHTML = content;
-            },
-            renderReactionResults(data) {
-                let html = `<h3 class="font-bold text-white mb-2">Reaction Complete</h3>`;
-                if (data.is_world_first) {
-                    html += `<p class="text-yellow-400 font-bold p-3 bg-yellow-900/50 rounded-md mb-3">🏆 Congratulations! You've made a World-First Discovery!</p>`;
-                }
-                html += `<div class="space-y-3">`;
-                html += `<div><strong class="text-text-muted">Explanation:</strong> <p>${data.explanation}</p></div>`;
-                html += `<div><strong class="text-text-muted">Products:</strong> <ul class="list-disc list-inside mt-1">`;
-                data.products.forEach(p => {
-                    const chemical = State.chemicals.find(c => c.id === p.chemical_id);
-                    const name = chemical && chemical.common_name ? `${chemical.common_name} (${p.molecular_formula})` : p.molecular_formula;
-                    html += `<li>${name} - Quantity: ${p.quantity.toFixed(2)}</li>`;
-                });
-                html += `</ul></div>`;
-                if (data.effects && data.effects.length > 0) {
-                    html += `<div><strong class="text-text-muted">Effects:</strong> <ul class="list-disc list-inside mt-1">`;
-                    data.effects.forEach(e => {
-                        html += `<li>${e.effect_type} (Intensity: ${e.intensity}, Color: <span style="color:${e.color}; font-weight:bold;">${e.color}</span>)</li>`;
-                    });
-                    html += `</ul></div>`;
-                }
-                html += `</div>`;
-                UI.resultsOutput.innerHTML = html;
-            },
-            createChoices(elementOrId, options = {}) {
-                const id = typeof elementOrId === 'string' ? elementOrId : (elementOrId.id || (elementOrId.id = `choices-${Math.random()}`));
-                if (State.choicesInstances[id]) {
-                    State.choicesInstances[id].destroy();
-                }
-                const element = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
-                if (!element) return null;
-                const instance = new Choices(element, { itemSelectText: '', searchResultLimit: 100, shouldSort: false, ...options });
-                State.choicesInstances[id] = instance;
-                return instance;
-            },
-            populateChoices(instance, data, placeholder) {
-                if (!instance) return;
-                instance.clearStore();
-                instance.setChoices([{ value: '', label: placeholder, selected: true, disabled: true }, ...data], 'value', 'label', false);
-            },
-            renderAwardsDashboard() {
-                const { myAwards, availableAwards } = State;
-                let html = `
-                    <div>
-                        <h3 class="font-semibold text-white mb-2">My Awards (${myAwards.length})</h3>
-                        <div class="space-y-2">
-                            ${myAwards.length > 0 ? myAwards.map(this.renderAwardCard).join('') : '<p class="text-sm text-text-muted">You have not earned any awards yet.</p>'}
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-white mb-2 mt-4">Available Awards</h3>
-                        <div class="space-y-2">
-                            ${availableAwards.length > 0 ? availableAwards.map(this.renderAvailableAwardCard).join('') : '<p class="text-sm text-text-muted">No new awards available.</p>'}
-                        </div>
-                    </div>
-                `;
-                UI.awardsDashboard.innerHTML = html;
-            },
-            renderAwardCard(award) {
-                const { template, tier, granted_at } = award;
-                return `
-                    <div class="bg-bg-tertiary p-3 rounded-md text-sm">
-                        <div class="flex justify-between items-start">
-                            <span class="font-bold text-secondary">${template.name} (Tier ${tier})</span>
-                            <span class="text-xs text-text-muted">${new Date(granted_at).toLocaleDateString()}</span>
-                        </div>
-                        <p class="text-text-secondary mt-1">${template.description}</p>
-                    </div>
-                `;
-            },
-            renderAvailableAwardCard(award) {
-                const { name, description, progress } = award;
-                const percentage = progress.percentage || 0;
-                return `
-                    <div class="bg-bg-tertiary p-3 rounded-md text-sm">
-                        <p class="font-bold text-text-secondary">${name}</p>
-                        <p class="text-text-muted mt-1 text-xs">${description}</p>
-                        <div class="mt-2">
-                            <div class="progress-bar"><div class="progress-bar-inner" style="width: ${percentage}%;">${percentage.toFixed(0)}%</div></div>
-                            <p class="text-xs text-right text-text-muted mt-1">${progress.current_value} / ${progress.target_value}</p>
-                        </div>
-                    </div>
-                `;
-            },
-            renderLeaderboard(leaderboardData) {
-                if (!leaderboardData || leaderboardData.length === 0) {
-                    UI.leaderboardOutput.innerHTML = '<p>No data available for this category.</p>';
-                    return;
-                }
-                let html = '<table class="w-full text-left">';
-                html += '<thead><tr class="border-b border-border"><th class="py-1">Rank</th><th class="py-1">User</th><th class="py-1">Points</th></tr></thead><tbody>';
-                leaderboardData.forEach(entry => {
-                    html += `<tr class="border-b border-border-light"><td class="py-1 pr-2">${entry.rank}</td><td class="py-1 pr-2">${entry.username}</td><td class="py-1">${entry.total_points}</td></tr>`;
-                });
-                html += '</tbody></table>';
-                UI.leaderboardOutput.innerHTML = html;
-            }
-        };
-
-        // --- MODULE: Application Logic ---
-        const App = {
-            init() {
-                UI.loginBtn.addEventListener('click', () => this.handleLogin());
-                UI.logoutBtn.addEventListener('click', () => this.handleLogout());
-                UI.passwordInput.addEventListener('keyup', e => e.key === 'Enter' && this.handleLogin());
-                UI.addReactantBtn.addEventListener('click', () => this.addReactantSelector());
-                UI.runReactionBtn.addEventListener('click', () => this.handleRunReaction());
-                UI.fetchLeaderboardBtn.addEventListener('click', () => this.handleFetchLeaderboard());
-                UI.clearChemicalsBtn.addEventListener('click', () => this.handleDebugClear('chemicals'));
-                UI.clearReactionsBtn.addEventListener('click', () => this.handleDebugClear('reactions'));
-                UI.requestDeleteBtn.addEventListener('click', () => this.handleRequestDelete());
-                UI.addChemicalBtn.addEventListener('click', () => this.handleAddChemical());
-                this.checkStoredAuth();
-            },
-            async handleLogin() {
-                const username = UI.usernameInput.value;
-                const password = UI.passwordInput.value;
-                if (!username || !password) return Renderer.showNotification('Username and password are required.', 'error');
+    <script>
+        function chemezyApp() {
+            return {
+                // State
+                loading: true,
+                loadingProgress: 0,
+                isAuthenticated: false,
+                username: '',
+                authToken: null,
+                showTutorial: false,
+                showWorldFirstEffect: false,
                 
-                UI.loginBtn.disabled = true;
-                UI.loginBtn.textContent = 'Logging in...';
-
-                try {
-                    const data = await API.login(username, password);
-                    State.authToken = data.access_token;
-                    State.username = username;
-                    State.saveToStorage();
-                    UI.authModal.classList.add('hidden');
-                    UI.appSection.classList.remove('hidden');
-                    UI.userDisplay.textContent = username;
-                    Renderer.showNotification('Login successful!', 'success');
-                    await this.loadInitialData();
-                } catch (error) {
-                    Renderer.showNotification(error.message, 'error');
-                } finally {
-                    UI.loginBtn.disabled = false;
-                    UI.loginBtn.textContent = 'Login';
-                }
-            },
-            async checkStoredAuth() {
-                if (State.loadFromStorage()) {
-                    try {
-                        await API.getChemicals();
-                        UI.authModal.classList.add('hidden');
-                        UI.appSection.classList.remove('hidden');
-                        UI.userDisplay.textContent = State.username;
+                // UI State
+                notifications: [],
+                isDragging: false,
+                isReacting: false,
+                
+                // Form Data
+                loginForm: {
+                    username: '',
+                    password: '',
+                    loading: false
+                },
+                newChemical: '',
+                chemicalSearch: '',
+                
+                // Game Data
+                chemicals: [],
+                reactants: [],
+                selectedCatalyst: '',
+                lastReaction: null,
+                myAwards: [],
+                leaderboard: [],
+                selectedLeaderboardCategory: 'discovery',
+                
+                // API Base URL
+                API_BASE: '/api/v1',
+                
+                // Computed
+                get filteredChemicals() {
+                    if (!this.chemicalSearch) return this.chemicals;
+                    const search = this.chemicalSearch.toLowerCase();
+                    return this.chemicals.filter(c => 
+                        c.molecular_formula.toLowerCase().includes(search) ||
+                        (c.common_name && c.common_name.toLowerCase().includes(search))
+                    );
+                },
+                
+                // Methods
+                async init() {
+                    // Simulate loading
+                    for (let i = 0; i <= 100; i += 10) {
+                        this.loadingProgress = i;
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    // Check stored auth
+                    const storedToken = localStorage.getItem('chemezy_token');
+                    const storedUsername = localStorage.getItem('chemezy_username');
+                    
+                    if (storedToken && storedUsername) {
+                        this.authToken = storedToken;
+                        this.username = storedUsername;
+                        this.isAuthenticated = true;
                         await this.loadInitialData();
-                        Renderer.showNotification('Welcome back!', 'success');
+                    }
+                    
+                    this.loading = false;
+                },
+                
+                async apiRequest(endpoint, options = {}) {
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    };
+                    
+                    if (this.authToken) {
+                        headers['Authorization'] = `Bearer ${this.authToken}`;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${this.API_BASE}${endpoint}`, {
+                            ...options,
+                            headers
+                        });
+                        
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'API request failed');
+                        }
+                        
+                        return response.status === 204 ? null : await response.json();
                     } catch (error) {
-                        State.clearStorage();
-                        Renderer.showNotification('Session expired. Please login again.', 'error');
+                        throw error;
                     }
-                }
-            },
-            handleLogout() {
-                State.clearStorage();
-                UI.authModal.classList.remove('hidden');
-                UI.appSection.classList.add('hidden');
-                UI.usernameInput.value = '';
-                UI.passwordInput.value = '';
-                Object.values(State.choicesInstances).forEach(instance => { try { instance.destroy(); } catch (e) {} });
-                State.choicesInstances = {};
-                Renderer.showNotification('Logged out successfully!', 'success');
-            },
-            async loadInitialData() {
-                try {
-                    const [chemicalsData, reactionsData, myAwardsData, availableAwardsData] = await Promise.all([
-                        API.getChemicals(), API.getReactions(), API.getMyAwards(), API.getAvailableAwards()
-                    ]);
-                    State.chemicals = chemicalsData.results;
-                    State.reactions = reactionsData;
-                    State.myAwards = myAwardsData;
-                    State.availableAwards = availableAwardsData;
-                    this.setupSelectors();
-                    Renderer.renderAwardsDashboard();
-                } catch (error) {
-                    Renderer.showNotification(`Failed to load initial data: ${error.message}`, 'error');
-                }
-            },
-            setupSelectors() {
-                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
-                const reactionChoices = State.reactions.map(r => ({ value: r.id, label: `Reaction #${r.id} (${r.reactants.join(', ')})` }));
+                },
                 
-                this.addReactantSelector();
-                
-                Renderer.populateChoices(Renderer.createChoices('catalyst-selector'), chemicalChoices, 'Select a catalyst (optional)');
-                Renderer.populateChoices(Renderer.createChoices('delete-chemical-selector'), chemicalChoices, 'Select a chemical');
-                Renderer.populateChoices(Renderer.createChoices('delete-reaction-selector'), reactionChoices, 'Select a reaction');
-                Renderer.populateChoices(Renderer.createChoices('leaderboard-category-selector'), State.awardCategories.map(c => ({value: c, label: c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())})), 'Select Category');
-            },
-            addReactantSelector() {
-                const templateNode = UI.reactantRowTemplate.content.cloneNode(true);
-                const newRow = templateNode.querySelector('.reactant-row');
-                UI.reactantsList.appendChild(newRow);
-                const selectorElement = newRow.querySelector('.reactant-selector');
-                const choices = Renderer.createChoices(selectorElement);
-                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
-                Renderer.populateChoices(choices, chemicalChoices, 'Select a reactant');
-                newRow.querySelector('.remove-reactant-btn').addEventListener('click', () => newRow.remove());
-            },
-            async handleRunReaction() {
-                const reactantRows = UI.reactantsList.querySelectorAll('.reactant-row');
-                const reactants = Array.from(reactantRows).map(row => {
-                    const selector = row.querySelector('.reactant-selector');
-                    const choiceInstance = State.choicesInstances[selector.id];
-                    const value = choiceInstance ? choiceInstance.getValue(true) : null;
-                    return value ? { chemical_id: parseInt(value), quantity: 1.0 } : null;
-                }).filter(Boolean);
-
-                if (reactants.length === 0) return Renderer.showNotification('Please select at least one reactant.', 'error');
-                const catalyst_id = State.choicesInstances['catalyst-selector'].getValue(true) || null;
-                
-                UI.runReactionBtn.disabled = true;
-                UI.runReactionBtn.textContent = 'Simulating...';
-                Renderer.renderGenericResults('Running Reaction...', { status: 'Processing...' });
-
-                try {
-                    const result = await API.runReaction({ reactants, catalyst_id, environment: "Earth (Normal)" });
-                    Renderer.renderReactionResults(result);
-                    Renderer.showNotification('Reaction complete!', 'success');
-                    if (result.is_world_first) {
-                        Renderer.showNotification('World-First Discovery! Refreshing awards...', 'info');
-                        const [myAwardsData, availableAwardsData] = await Promise.all([API.getMyAwards(), API.getAvailableAwards()]);
-                        State.myAwards = myAwardsData;
-                        State.availableAwards = availableAwardsData;
-                        Renderer.renderAwardsDashboard();
+                async handleLogin() {
+                    this.loginForm.loading = true;
+                    
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('username', this.loginForm.username);
+                        formData.append('password', this.loginForm.password);
+                        
+                        const response = await this.apiRequest('/auth/token', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: formData
+                        });
+                        
+                        this.authToken = response.access_token;
+                        this.username = this.loginForm.username;
+                        this.isAuthenticated = true;
+                        
+                        // Store auth
+                        localStorage.setItem('chemezy_token', this.authToken);
+                        localStorage.setItem('chemezy_username', this.username);
+                        
+                        // Load initial data
+                        await this.loadInitialData();
+                        
+                        this.showNotification('Welcome to Chemezy Lab!', 'success', `Logged in as ${this.username}`);
+                    } catch (error) {
+                        this.showNotification('Login Failed', 'error', error.message);
+                    } finally {
+                        this.loginForm.loading = false;
                     }
-                } catch (error) {
-                    Renderer.renderGenericResults('Reaction Failed', { error: error.message });
-                    Renderer.showNotification(error.message, 'error');
-                } finally {
-                    UI.runReactionBtn.disabled = false;
-                    UI.runReactionBtn.textContent = 'Run Reaction';
-                }
-            },
-            async handleFetchLeaderboard() {
-                const category = State.choicesInstances['leaderboard-category-selector'].getValue(true);
-                if (!category) return Renderer.showNotification('Please select a leaderboard category.', 'error');
+                },
                 
-                UI.fetchLeaderboardBtn.disabled = true;
-                UI.leaderboardOutput.innerHTML = '<p>Fetching leaderboard...</p>';
-
-                try {
-                    const data = await API.getLeaderboard(category);
-                    Renderer.renderLeaderboard(data);
-                } catch (error) {
-                    UI.leaderboardOutput.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-                    Renderer.showNotification(error.message, 'error');
-                } finally {
-                    UI.fetchLeaderboardBtn.disabled = false;
-                }
-            },
-            async handleDebugClear(type) {
-                if (!confirm(`Are you sure you want to delete ALL ${type}? This action cannot be undone.`)) return;
-                try {
-                    const result = (type === 'chemicals') ? await API.clearAllChemicals() : await API.clearAllReactions();
-                    Renderer.renderGenericResults(`Cleared All ${type}`, result);
-                    Renderer.showNotification(result.message, 'success');
-                    await this.loadInitialData();
-                } catch (error) {
-                    Renderer.renderGenericResults(`Failed to clear ${type}`, { error: error.message });
-                    Renderer.showNotification(error.message, 'error');
-                }
-            },
-            async handleRequestDelete() {
-                const chemicalId = State.choicesInstances['delete-chemical-selector'].getValue(true);
-                const reactionId = State.choicesInstances['delete-reaction-selector'].getValue(true);
-                const reason = UI.deleteReason.value;
-                if ((!chemicalId && !reactionId) || (chemicalId && reactionId)) return Renderer.showNotification('Please select exactly one chemical OR one reaction to delete.', 'error');
-                if (!reason) return Renderer.showNotification('A reason for deletion is required.', 'error');
-                const type = chemicalId ? 'chemicals' : 'reactions';
-                const id = chemicalId || reactionId;
-                try {
-                    const result = await API.requestDelete(type, id, reason);
-                    Renderer.renderGenericResults('Deletion Request Submitted', result);
-                    Renderer.showNotification(result.message, 'success');
-                    UI.deleteReason.value = '';
-                    State.choicesInstances['delete-chemical-selector'].setChoiceByValue('');
-                    State.choicesInstances['delete-reaction-selector'].setChoiceByValue('');
-                } catch (error) {
-                    Renderer.renderGenericResults('Deletion Request Failed', { error: error.message });
-                    Renderer.showNotification(error.message, 'error');
-                }
-            },
-            async handleAddChemical() {
-                const molecularFormula = UI.chemicalFormulaInput.value.trim();
-                if (!molecularFormula) return Renderer.showNotification('Molecular formula is required.', 'error');
-                const formulaRegex = /^[A-Za-z0-9\(\)\[\]]+$/;
-                if (!formulaRegex.test(molecularFormula)) return Renderer.showNotification('Invalid molecular formula format.', 'error');
-                if (State.chemicals.some(c => c.molecular_formula.toLowerCase() === molecularFormula.toLowerCase())) return Renderer.showNotification('Chemical with this formula already exists.', 'error');
-
-                UI.addChemicalBtn.disabled = true;
-                UI.addChemicalBtn.textContent = 'Adding...';
-                try {
-                    const newChemical = await API.createChemical({ molecular_formula: molecularFormula });
-                    State.chemicals.push(newChemical);
-                    UI.chemicalFormulaInput.value = '';
-                    this.updateChemicalSelectors();
-                    Renderer.showNotification(`Chemical "${molecularFormula}" added successfully!`, 'success');
-                    Renderer.renderGenericResults('New Chemical Added', newChemical);
-                } catch (error) {
-                    Renderer.showNotification(error.message, 'error');
-                } finally {
-                    UI.addChemicalBtn.disabled = false;
-                    UI.addChemicalBtn.textContent = 'Add Chemical';
-                }
-            },
-            updateChemicalSelectors() {
-                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
-                Object.values(State.choicesInstances).forEach(instance => {
-                    if (instance.config.id.includes('catalyst') || instance.config.id.includes('reactant') || instance.config.id.includes('delete-chemical')) {
-                        const currentValue = instance.getValue(true);
-                        Renderer.populateChoices(instance, chemicalChoices, instance.config.placeholderValue);
-                        if (currentValue) instance.setChoiceByValue(currentValue);
+                logout() {
+                    this.isAuthenticated = false;
+                    this.authToken = null;
+                    this.username = '';
+                    localStorage.removeItem('chemezy_token');
+                    localStorage.removeItem('chemezy_username');
+                    this.loginForm.username = '';
+                    this.loginForm.password = '';
+                    this.showNotification('Logged Out', 'info', 'See you next time!');
+                },
+                
+                async loadInitialData() {
+                    try {
+                        const [chemicalsData, awardsData] = await Promise.all([
+                            this.apiRequest('/chemicals/'),
+                            this.apiRequest('/awards/me')
+                        ]);
+                        
+                        this.chemicals = chemicalsData.results || [];
+                        this.myAwards = awardsData || [];
+                        
+                        await this.fetchLeaderboard();
+                    } catch (error) {
+                        this.showNotification('Error', 'error', 'Failed to load initial data');
                     }
-                });
-            },
-        };
-
-        App.init();
-    });
-</script>
-
+                },
+                
+                async addChemical() {
+                    if (!this.newChemical.trim()) return;
+                    
+                    try {
+                        const chemical = await this.apiRequest('/chemicals/', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                molecular_formula: this.newChemical.trim()
+                            })
+                        });
+                        
+                        this.chemicals.push(chemical);
+                        this.showNotification('Chemical Added', 'success', `${chemical.molecular_formula} has been added to your inventory`);
+                        this.newChemical = '';
+                    } catch (error) {
+                        this.showNotification('Error', 'error', error.message);
+                    }
+                },
+                
+                startDrag(event, chemical) {
+                    event.dataTransfer.effectAllowed = 'copy';
+                    event.dataTransfer.setData('chemical', JSON.stringify(chemical));
+                    this.isDragging = true;
+                    event.target.classList.add('dragging');
+                },
+                
+                endDrag(event) {
+                    this.isDragging = false;
+                    event.target.classList.remove('dragging');
+                },
+                
+                handleDrop(event) {
+                    event.preventDefault();
+                    this.isDragging = false;
+                    
+                    try {
+                        const chemical = JSON.parse(event.dataTransfer.getData('chemical'));
+                        
+                        // Check if already added
+                        if (!this.reactants.find(r => r.id === chemical.id)) {
+                            this.reactants.push(chemical);
+                            this.showNotification('Chemical Added', 'info', `${chemical.molecular_formula} added to reaction`);
+                        } else {
+                            this.showNotification('Already Added', 'warning', 'This chemical is already in the reaction');
+                        }
+                    } catch (error) {
+                        console.error('Drop error:', error);
+                    }
+                },
+                
+                removeReactant(index) {
+                    this.reactants.splice(index, 1);
+                },
+                
+                async runReaction() {
+                    if (this.reactants.length === 0) return;
+                    
+                    this.isReacting = true;
+                    
+                    try {
+                        const reactionData = {
+                            reactants: this.reactants.map(r => ({
+                                chemical_id: r.id,
+                                quantity: 1.0
+                            })),
+                            catalyst_id: this.selectedCatalyst || null,
+                            environment: "Earth (Normal)"
+                        };
+                        
+                        const result = await this.apiRequest('/reactions/react', {
+                            method: 'POST',
+                            body: JSON.stringify(reactionData)
+                        });
+                        
+                        this.lastReaction = result;
+                        
+                        if (result.is_world_first) {
+                            this.showWorldFirstDiscovery();
+                            // Reload awards
+                            const awardsData = await this.apiRequest('/awards/me');
+                            this.myAwards = awardsData || [];
+                        }
+                        
+                        this.showNotification('Reaction Complete', 'success', 'Check the results below!');
+                        
+                        // Clear reactants
+                        this.reactants = [];
+                        this.selectedCatalyst = '';
+                    } catch (error) {
+                        this.showNotification('Reaction Failed', 'error', error.message);
+                    } finally {
+                        this.isReacting = false;
+                    }
+                },
+                
+                async fetchLeaderboard() {
+                    try {
+                        const data = await this.apiRequest(`/awards/leaderboard/${this.selectedLeaderboardCategory}`);
+                        this.leaderboard = data || [];
+                    } catch (error) {
+                        console.error('Failed to fetch leaderboard:', error);
+                    }
+                },
+                
+                showWorldFirstDiscovery() {
+                    this.showWorldFirstEffect = true;
+                    setTimeout(() => {
+                        this.showWorldFirstEffect = false;
+                    }, 2000);
+                    
+                    this.showNotification('World First!', 'warning', 'Congratulations! You\'ve made a new discovery!');
+                },
+                
+                showNotification(title, type, message) {
+                    const notification = {
+                        id: Date.now(),
+                        title,
+                        type,
+                        message
+                    };
+                    
+                    this.notifications.push(notification);
+                    
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        const index = this.notifications.findIndex(n => n.id === notification.id);
+                        if (index > -1) {
+                            this.notifications.splice(index, 1);
+                        }
+                    }, 5000);
+                },
+                
+                removeNotification(index) {
+                    this.notifications.splice(index, 1);
+                }
+            };
+        }
+    </script>
 </body>
 </html>
