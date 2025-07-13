@@ -8,6 +8,7 @@ class UserBase(SQLModel):
     username: str = Field(unique=True, index=True, max_length=50)
     email: str = Field(unique=True, index=True, max_length=255)
     is_active: bool = Field(default=True)
+    public_profile: bool = Field(default=False, description="Allow public viewing of awards")
 
 
 class User(UserBase, table=True):

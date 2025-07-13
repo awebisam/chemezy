@@ -1,6 +1,7 @@
 import json
 import hashlib
 from typing import List, Dict, Any
+import logging
 
 from sqlmodel import Session, select, func, delete
 import dspy
@@ -13,6 +14,8 @@ from app.schemas.chemical import ChemicalCreate
 from app.services.chemical_service import ChemicalService
 from app.services.dspy_extended import ChemistryReasoningModule
 from app.services.dspy_signatures import PredictReactionProductsAndEffects
+
+logger = logging.getLogger(__name__)
 
 class ReactionPredictionModule(dspy.Module):
     """DSPy module for reaction prediction."""
@@ -36,6 +39,20 @@ class ReactionService:
             self.reaction_predictor = ReactionPredictionModule()
         else:
             self.reaction_predictor = None
+        
+        # Initialize award service for discovery awards (lazy import to avoid circular dependency)
+        self._award_service = None
+    
+    def _get_award_service(self):
+        """Lazy load award service to avoid circular dependency."""
+        if self._award_service is None:
+            try:
+                from app.services.award_service import AwardService
+                self._award_service = AwardService(self.db)
+            except ImportError as e:
+                logger.warning(f"Award service not available: {e}")
+                self._award_service = None
+        return self._award_service
 
     async def predict_reaction(
         self, request: ReactionRequest, user_id: int
@@ -129,6 +146,8 @@ class ReactionService:
     ) -> bool:
         """Checks if any effects are world-first discoveries and logs them."""
         is_world_first_overall = False
+        discovered_effects = []
+        
         for effect_obj in effects:
             effect_str = effect_obj.effect_type # Use the string representation of the effect
             existing_discovery = db.exec(
@@ -142,12 +161,68 @@ class ReactionService:
                     reaction_cache_id=reaction_cache_id
                 )
                 db.add(new_discovery)
+                discovered_effects.append(effect_str)
                 is_world_first_overall = True
         
         if is_world_first_overall:
             db.commit()
+            
+            # Evaluate discovery awards after successful world-first discovery
+            # Use async task to prevent award failures from impacting reaction processing
+            await self._evaluate_discovery_awards_safely(
+                user_id, reaction_cache_id, discovered_effects
+            )
         
         return is_world_first_overall
+
+    async def _evaluate_discovery_awards_safely(
+        self, user_id: int, reaction_cache_id: int, discovered_effects: List[str]
+    ) -> None:
+        """
+        Safely evaluate discovery awards without impacting reaction processing.
+        
+        This method ensures that award evaluation failures do not break the core
+        reaction functionality by catching and logging all exceptions.
+        """
+        try:
+            award_service = self._get_award_service()
+            if award_service is None:
+                logger.debug("Award service not available, skipping award evaluation")
+                return
+            
+            # Prepare context for award evaluation
+            context = {
+                "reaction_cache_id": reaction_cache_id,
+                "discovered_effects": discovered_effects,
+                "effect_count": len(discovered_effects),
+                "entity_type": "reaction_cache",
+                "entity_id": reaction_cache_id
+            }
+            
+            # Evaluate discovery awards
+            granted_awards = await award_service.evaluate_discovery_awards(
+                user_id=user_id,
+                reaction_cache_id=reaction_cache_id,
+                context=context
+            )
+            
+            if granted_awards:
+                logger.info(
+                    f"Granted {len(granted_awards)} discovery awards to user {user_id} "
+                    f"for reaction {reaction_cache_id}"
+                )
+            else:
+                logger.debug(
+                    f"No discovery awards granted to user {user_id} for reaction {reaction_cache_id}"
+                )
+                
+        except Exception as e:
+            # Log the error but don't re-raise to prevent breaking reaction processing
+            logger.error(
+                f"Failed to evaluate discovery awards for user {user_id}, "
+                f"reaction {reaction_cache_id}: {e}",
+                exc_info=True
+            )
 
     def _get_reactants_from_db(self, reactant_inputs: List[Dict[str, Any]]) -> List[Chemical]:
         """Fetches chemical data from the database for the given reactants."""

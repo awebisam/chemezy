@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }
