@@ -176,7 +176,7 @@ class NotificationService:
                 notification = {
                     "id": f"award_{award['id']}",
                     "type": "award_granted",
-                    "title": f"<Æ Award Earned: {award['template_name']}",
+                    "title": f"<ï¿½ Award Earned: {award['template_name']}",
                     "message": f"You earned the {award['template_name']} award (Tier {award['tier']})!",
                     "timestamp": award['granted_at'],
                     "read": not award['is_new'],

@@ -11,11 +11,21 @@ from app.db.session import get_session
 from app.models.user import User
 from app.services.config_service import config_service, FeatureFlagStatus
 from app.services.audit_service import AuditService, AuditAction
+from app.schemas.admin_config import (
+    ConfigurationInfoSchema,
+    FeatureFlagsResponseSchema,
+    FeatureFlagDetailSchema,
+    FeatureFlagToggleResponseSchema,
+    ConfigurationReloadResponseSchema,
+    UserFeaturesResponseSchema,
+    SystemStatusResponseSchema,
+    FeatureFlagSchema
+)
 
 router = APIRouter()
 
 
-@router.get("/info")
+@router.get("/info", response_model=ConfigurationInfoSchema)
 async def get_configuration_info(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -29,9 +39,9 @@ async def get_configuration_info(
         config_info = config_service.get_configuration_info()
         config_data = config_service.get_config()
         
-        return {
-            "configuration_info": config_info,
-            "current_config": {
+        return ConfigurationInfoSchema(
+            configuration_info=config_info,
+            current_config={
                 "evaluation_enabled": config_data.evaluation_enabled,
                 "cache_enabled": config_data.cache_enabled,
                 "notifications_enabled": config_data.notifications_enabled,
@@ -41,9 +51,9 @@ async def get_configuration_info(
                 "requests_per_minute": config_data.requests_per_minute,
                 "admin_requests_per_minute": config_data.admin_requests_per_minute
             },
-            "retrieved_at": "2025-01-15T00:00:00Z",
-            "retrieved_by": admin_user.username
-        }
+            retrieved_at="2025-01-15T00:00:00Z",
+            retrieved_by=admin_user.username
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -52,7 +62,7 @@ async def get_configuration_info(
         )
 
 
-@router.get("/feature-flags")
+@router.get("/feature-flags", response_model=FeatureFlagsResponseSchema)
 async def get_feature_flags(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -67,23 +77,23 @@ async def get_feature_flags(
         
         flags_data = []
         for name, flag in feature_flags.items():
-            flags_data.append({
-                "name": name,
-                "status": flag.status.value,
-                "description": flag.description,
-                "rollout_percentage": flag.rollout_percentage,
-                "target_users": flag.target_users,
-                "target_groups": flag.target_groups,
-                "environments": flag.environments,
-                "metadata": flag.metadata
-            })
+            flags_data.append(FeatureFlagSchema(
+                name=name,
+                status=flag.status.value,
+                description=flag.description,
+                rollout_percentage=flag.rollout_percentage,
+                target_users=flag.target_users,
+                target_groups=flag.target_groups,
+                environments=flag.environments,
+                metadata=flag.metadata
+            ))
         
-        return {
-            "feature_flags": flags_data,
-            "total_count": len(flags_data),
-            "retrieved_at": "2025-01-15T00:00:00Z",
-            "retrieved_by": admin_user.username
-        }
+        return FeatureFlagsResponseSchema(
+            feature_flags=flags_data,
+            total_count=len(flags_data),
+            retrieved_at="2025-01-15T00:00:00Z",
+            retrieved_by=admin_user.username
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -92,7 +102,7 @@ async def get_feature_flags(
         )
 
 
-@router.get("/feature-flags/{feature_name}")
+@router.get("/feature-flags/{feature_name}", response_model=FeatureFlagDetailSchema)
 async def get_feature_flag(
     feature_name: str,
     admin_user: User = Depends(get_current_admin_user),
@@ -112,20 +122,20 @@ async def get_feature_flag(
                 detail=f"Feature flag '{feature_name}' not found"
             )
         
-        return {
-            "feature_flag": {
-                "name": flag.name,
-                "status": flag.status.value,
-                "description": flag.description,
-                "rollout_percentage": flag.rollout_percentage,
-                "target_users": flag.target_users,
-                "target_groups": flag.target_groups,
-                "environments": flag.environments,
-                "metadata": flag.metadata
-            },
-            "retrieved_at": "2025-01-15T00:00:00Z",
-            "retrieved_by": admin_user.username
-        }
+        return FeatureFlagDetailSchema(
+            feature_flag=FeatureFlagSchema(
+                name=flag.name,
+                status=flag.status.value,
+                description=flag.description,
+                rollout_percentage=flag.rollout_percentage,
+                target_users=flag.target_users,
+                target_groups=flag.target_groups,
+                environments=flag.environments,
+                metadata=flag.metadata
+            ),
+            retrieved_at="2025-01-15T00:00:00Z",
+            retrieved_by=admin_user.username
+        )
         
     except HTTPException:
         raise
@@ -136,7 +146,7 @@ async def get_feature_flag(
         )
 
 
-@router.post("/feature-flags/{feature_name}/toggle")
+@router.post("/feature-flags/{feature_name}/toggle", response_model=FeatureFlagToggleResponseSchema)
 async def toggle_feature_flag(
     feature_name: str,
     admin_user: User = Depends(get_current_admin_user),
@@ -181,15 +191,15 @@ async def toggle_feature_flag(
             }
         )
         
-        return {
-            "success": True,
-            "feature_name": feature_name,
-            "old_status": flag.status.value,
-            "new_status": new_status.value,
-            "message": f"Feature flag '{feature_name}' toggled to {new_status.value}",
-            "toggled_at": "2025-01-15T00:00:00Z",
-            "toggled_by": admin_user.username
-        }
+        return FeatureFlagToggleResponseSchema(
+            success=True,
+            feature_name=feature_name,
+            old_status=flag.status.value,
+            new_status=new_status.value,
+            message=f"Feature flag '{feature_name}' toggled to {new_status.value}",
+            toggled_at="2025-01-15T00:00:00Z",
+            toggled_by=admin_user.username
+        )
         
     except HTTPException:
         raise
@@ -200,7 +210,7 @@ async def toggle_feature_flag(
         )
 
 
-@router.post("/reload")
+@router.post("/reload", response_model=ConfigurationReloadResponseSchema)
 async def reload_configuration(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -224,12 +234,12 @@ async def reload_configuration(
             }
         )
         
-        return {
-            "success": True,
-            "message": "Configuration reloaded successfully",
-            "reloaded_at": "2025-01-15T00:00:00Z",
-            "reloaded_by": admin_user.username
-        }
+        return ConfigurationReloadResponseSchema(
+            success=True,
+            message="Configuration reloaded successfully",
+            reloaded_at="2025-01-15T00:00:00Z",
+            reloaded_by=admin_user.username
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -238,7 +248,7 @@ async def reload_configuration(
         )
 
 
-@router.get("/user-features")
+@router.get("/user-features", response_model=UserFeaturesResponseSchema)
 async def get_user_features(
     user_id: Optional[int] = None,
     admin_user: User = Depends(get_current_admin_user),
@@ -260,14 +270,14 @@ async def get_user_features(
             user_groups=user_groups
         )
         
-        return {
-            "user_id": target_user_id,
-            "user_groups": user_groups,
-            "enabled_features": enabled_features,
-            "total_enabled": len(enabled_features),
-            "checked_at": "2025-01-15T00:00:00Z",
-            "checked_by": admin_user.username
-        }
+        return UserFeaturesResponseSchema(
+            user_id=target_user_id,
+            user_groups=user_groups,
+            enabled_features=enabled_features,
+            total_enabled=len(enabled_features),
+            checked_at="2025-01-15T00:00:00Z",
+            checked_by=admin_user.username
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -276,7 +286,7 @@ async def get_user_features(
         )
 
 
-@router.get("/system-status")
+@router.get("/system-status", response_model=SystemStatusResponseSchema)
 async def get_system_status(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -303,15 +313,15 @@ async def get_system_status(
         
         status = "healthy" if health_score >= 80 else "warning" if health_score >= 60 else "critical"
         
-        return {
-            "system_status": status,
-            "health_score": round(health_score, 2),
-            "health_factors": health_factors,
-            "configuration_info": config_info,
-            "recommendations": _get_system_recommendations(config_data),
-            "checked_at": "2025-01-15T00:00:00Z",
-            "checked_by": admin_user.username
-        }
+        return SystemStatusResponseSchema(
+            system_status=status,
+            health_score=round(health_score, 2),
+            health_factors=health_factors,
+            configuration_info=config_info,
+            recommendations=_get_system_recommendations(config_data),
+            checked_at="2025-01-15T00:00:00Z",
+            checked_by=admin_user.username
+        )
         
     except Exception as e:
         raise HTTPException(

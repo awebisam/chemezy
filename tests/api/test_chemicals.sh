@@ -13,7 +13,7 @@ test_get_chemicals() {
     log_test_info "Testing get chemicals endpoint"
     
     local response_file="/tmp/test_chemicals_response.json"
-    local token=$(setup_test_user "chemtest" "chempass")
+    local token=$(setup_test_user "chemtest$(date +%s)" "chempass" "chemtest$(date +%s)@example.com")
     
     if [[ -z "$token" ]]; then
         log_test_error "Failed to get authentication token"
@@ -36,7 +36,7 @@ test_get_chemicals() {
     fi
 }
 
-# Test get chemicals without authentication
+# Test get chemicals without authentication (should work - endpoint is public)
 test_get_chemicals_no_auth() {
     log_test_info "Testing get chemicals without authentication"
     
@@ -44,7 +44,18 @@ test_get_chemicals_no_auth() {
     
     make_request "GET" "/chemicals/" "" "" "$response_file"
     
-    assert_status_code "401" "$response_file" "Get chemicals without auth returns 401"
+    assert_status_code "200" "$response_file" "Get chemicals without auth returns 200 (public endpoint)"
+    
+    # Check if response contains valid data structure
+    local body=$(grep -v "^HTTP_STATUS:" "$response_file")
+    local count=$(echo "$body" | jq -r '.count' 2>/dev/null)
+    
+    if [[ "$count" != "null" && "$count" -ge 0 ]]; then
+        echo -e "${GREEN}✓${NC} Public chemicals endpoint returns valid data"
+    else
+        echo -e "${RED}✗${NC} Public chemicals endpoint response invalid"
+        return 1
+    fi
 }
 
 # Test get chemicals with pagination
@@ -52,14 +63,14 @@ test_get_chemicals_pagination() {
     log_test_info "Testing get chemicals with pagination"
     
     local response_file="/tmp/test_chemicals_pagination_response.json"
-    local token=$(setup_test_user "chemtest2" "chempass2")
+    local token=$(setup_test_user "chemtest2$(date +%s)" "chempass2" "chemtest2$(date +%s)@example.com")
     
     if [[ -z "$token" ]]; then
         log_test_error "Failed to get authentication token"
         return 1
     fi
     
-    make_request "GET" "/chemicals/?limit=5&offset=0" "" "Authorization: Bearer $token" "$response_file"
+    make_request "GET" "/chemicals/?limit=5&skip=0" "" "Authorization: Bearer $token" "$response_file"
     
     assert_status_code "200" "$response_file" "Get chemicals with pagination returns 200"
     

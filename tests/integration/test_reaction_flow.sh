@@ -20,7 +20,7 @@ test_complete_reaction_flow() {
     local password="flowpass123"
     
     # Step 1: Register user
-    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\"}" "Content-Type: application/json" "$auth_response"
+    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\",\"email\":\"$username@example.com\"}" "Content-Type: application/json" "$auth_response"
     
     if ! assert_status_code "201" "$auth_response" "User registration successful"; then
         return 1

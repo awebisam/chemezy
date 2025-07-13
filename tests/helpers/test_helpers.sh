@@ -48,7 +48,7 @@ assert_status_code() {
     local response_file="$2"
     local message="${3:-}"
     
-    local actual_code=$(grep "^HTTP_STATUS:" "$response_file" | cut -d: -f2 | tr -d ' ')
+    local actual_code=$(grep "HTTP_STATUS:" "$response_file" | sed 's/.*HTTP_STATUS://' | tr -d ' ')
     
     if [[ "$expected_code" == "$actual_code" ]]; then
         echo -e "${GREEN}✓${NC} $message (HTTP $actual_code)"
@@ -139,10 +139,11 @@ get_auth_token() {
 setup_test_user() {
     local username="${1:-testuser}"
     local password="${2:-testpass}"
+    local email="${3:-test@example.com}"
     local response_file="/tmp/setup_user_response.json"
     
     # Try to create user (might fail if already exists)
-    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\"}" "Content-Type: application/json" "$response_file"
+    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\",\"email\":\"$email\"}" "Content-Type: application/json" "$response_file"
     
     # Return the auth token
     get_auth_token "$username" "$password"

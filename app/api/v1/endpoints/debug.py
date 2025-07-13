@@ -8,10 +8,15 @@ from app.services.debug_service import DebugService
 from app.services.award_service import AwardService
 from app.api.v1.endpoints.users import get_current_user
 from app.models.user import User
+from app.schemas.debug import (
+    DebugClearResponseSchema,
+    DebugDeletionRequestSchema,
+    DebugDeletionResponseSchema
+)
 
 router = APIRouter()
 
-@router.delete("/reactions/clear", status_code=200)
+@router.delete("/reactions/clear", status_code=200, response_model=DebugClearResponseSchema)
 def clear_all_reactions(
     *, 
     db: Session = Depends(get_db)
@@ -21,12 +26,12 @@ def clear_all_reactions(
     """
     reaction_service = ReactionService(db)
     result = reaction_service.clear_all_reactions()
-    return result
+    return DebugClearResponseSchema(**result)
 
-@router.delete("/reactions/{reaction_id}", status_code=202)
+@router.delete("/reactions/{reaction_id}", status_code=202, response_model=DebugDeletionResponseSchema)
 async def request_delete_reaction(
     reaction_id: int,
-    reason: str = Body(..., embed=True),
+    request: DebugDeletionRequestSchema,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,22 +44,28 @@ async def request_delete_reaction(
         deletion_request = await debug_service.create_deletion_request(
             item_type="reaction",
             item_id=reaction_id,
-            reason=reason,
+            reason=request.reason,
             user_id=current_user.id
         )
-        return {"message": "Deletion request submitted for review.", "request_id": deletion_request.id}
+        return DebugDeletionResponseSchema(
+            message="Deletion request submitted for review.",
+            request_id=deletion_request.id
+        )
     except Exception as e:
         # Fallback to basic debug service if award service fails
         debug_service = DebugService(db)
         deletion_request = await debug_service.create_deletion_request(
             item_type="reaction",
             item_id=reaction_id,
-            reason=reason,
+            reason=request.reason,
             user_id=current_user.id
         )
-        return {"message": "Deletion request submitted for review.", "request_id": deletion_request.id}
+        return DebugDeletionResponseSchema(
+            message="Deletion request submitted for review.",
+            request_id=deletion_request.id
+        )
 
-@router.delete("/chemicals/clear", status_code=200)
+@router.delete("/chemicals/clear", status_code=200, response_model=DebugClearResponseSchema)
 def clear_all_chemicals(
     *, 
     db: Session = Depends(get_db)
@@ -64,12 +75,12 @@ def clear_all_chemicals(
     """
     chemical_service = ChemicalService(db)
     result = chemical_service.clear_all_chemicals()
-    return result
+    return DebugClearResponseSchema(**result)
 
-@router.delete("/chemicals/{chemical_id}", status_code=202)
+@router.delete("/chemicals/{chemical_id}", status_code=202, response_model=DebugDeletionResponseSchema)
 async def request_delete_chemical(
     chemical_id: int,
-    reason: str = Body(..., embed=True),
+    request: DebugDeletionRequestSchema,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -82,17 +93,23 @@ async def request_delete_chemical(
         deletion_request = await debug_service.create_deletion_request(
             item_type="chemical",
             item_id=chemical_id,
-            reason=reason,
+            reason=request.reason,
             user_id=current_user.id
         )
-        return {"message": "Deletion request submitted for review.", "request_id": deletion_request.id}
+        return DebugDeletionResponseSchema(
+            message="Deletion request submitted for review.",
+            request_id=deletion_request.id
+        )
     except Exception as e:
         # Fallback to basic debug service if award service fails
         debug_service = DebugService(db)
         deletion_request = await debug_service.create_deletion_request(
             item_type="chemical",
             item_id=chemical_id,
-            reason=reason,
+            reason=request.reason,
             user_id=current_user.id
         )
-        return {"message": "Deletion request submitted for review.", "request_id": deletion_request.id}
+        return DebugDeletionResponseSchema(
+            message="Deletion request submitted for review.",
+            request_id=deletion_request.id
+        )

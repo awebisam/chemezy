@@ -123,3 +123,116 @@ class AwardRevocationSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Request schemas for notification endpoints
+class NotificationMarkReadSchema(BaseModel):
+    """Schema for marking notifications as read."""
+    notification_ids: List[str]
+
+    class Config:
+        from_attributes = True
+
+
+# Response schemas for dashboard and notification endpoints
+class DashboardStatsSchema(BaseModel):
+    """Schema for dashboard statistics response."""
+    user_id: int
+    username: str
+    dashboard_stats: Dict[str, Any]
+
+    class Config:
+        from_attributes = True
+
+
+class RecentAwardsSchema(BaseModel):
+    """Schema for recent awards response."""
+    user_id: int
+    recent_awards: List[Dict[str, Any]]
+    days_back: int
+    total_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class AwardProgressSchema(BaseModel):
+    """Schema for award progress response."""
+    user_id: int
+    progress: Dict[str, Any]
+
+    class Config:
+        from_attributes = True
+
+
+class AwardNotificationsSchema(BaseModel):
+    """Schema for award notifications response."""
+    user_id: int
+    notifications: List[Dict[str, Any]]
+    unread_only: bool
+    total_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationMarkReadResponseSchema(BaseModel):
+    """Schema for notification mark read response."""
+    success: bool
+    marked_count: int
+    message: str
+
+    class Config:
+        from_attributes = True
+
+
+class UserRankSchema(BaseModel):
+    """Schema for user rank response."""
+    rank: Optional[int]
+    user_id: int
+    username: str
+    award_count: int
+    total_points: int
+    category: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class RecentAchievementsSchema(BaseModel):
+    """Schema for recent achievements response."""
+    recent_achievements: List[Dict[str, Any]]
+    total_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class CommunityStatisticsSchema(BaseModel):
+    """Schema for community statistics response."""
+    category_statistics: Dict[str, Any]
+    generated_at: str
+
+    class Config:
+        from_attributes = True
+
+
+class AwardRevocationResponseSchema(BaseModel):
+    """Schema for award revocation response."""
+    message: str
+    award_id: int
+    reason: str
+    revoked_by: int
+
+    class Config:
+        from_attributes = True
+
+
+# Additional response schemas for admin endpoints
+class PaginatedAwardTemplatesSchema(BaseModel):
+    """Schema for paginated award templates response."""
+    templates: List[AwardTemplateSchema]
+    total_count: int
+
+    class Config:
+        from_attributes = True

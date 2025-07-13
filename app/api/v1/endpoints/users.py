@@ -54,7 +54,7 @@ async def get_current_admin_user(
     return current_user
 
 
-@router.post("/register", response_model=UserResponseSchema)
+@router.post("/register", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")  # Limit registration attempts
 async def register_user(
     request: Request,

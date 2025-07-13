@@ -16,7 +16,7 @@ test_user_registration() {
     local username="testuser_$(date +%s)"
     local password="testpass123"
     
-    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\"}" "Content-Type: application/json" "$response_file"
+    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\",\"email\":\"$username@example.com\"}" "Content-Type: application/json" "$response_file"
     
     assert_status_code "201" "$response_file" "User registration returns 201"
     
@@ -38,7 +38,7 @@ test_user_login() {
     local password="testpass123"
     
     # First register a user
-    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\"}" "Content-Type: application/json" "/tmp/register_temp.json"
+    make_request "POST" "/auth/register" "{\"username\":\"$username\",\"password\":\"$password\",\"email\":\"$username@example.com\"}" "Content-Type: application/json" "/tmp/register_temp.json"
     
     # Then try to login
     make_request "POST" "/auth/token" "username=$username&password=$password" "Content-Type: application/x-www-form-urlencoded" "$response_file"

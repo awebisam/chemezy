@@ -18,7 +18,9 @@ from app.schemas.award import (
     UpdateAwardTemplateSchema,
     ManualAwardGrantSchema,
     AwardRevocationSchema,
-    UserAwardSchema
+    UserAwardSchema,
+    AwardRevocationResponseSchema,
+    PaginatedAwardTemplatesSchema
 )
 
 router = APIRouter()
@@ -60,7 +62,7 @@ async def create_award_template(
         )
 
 
-@router.get("/templates", response_model=List[AwardTemplateSchema])
+@router.get("/templates", response_model=PaginatedAwardTemplatesSchema)
 async def get_award_templates(
     category: Optional[AwardCategory] = Query(None, description="Filter by category"),
     active_only: bool = Query(True, description="Show only active templates"),
@@ -83,7 +85,10 @@ async def get_award_templates(
             limit=limit
         )
         
-        return [AwardTemplateSchema.from_orm(template) for template in templates]
+        return PaginatedAwardTemplatesSchema(
+            templates=[AwardTemplateSchema.from_orm(template) for template in templates],
+            total_count=len(templates)
+        )
         
     except Exception as e:
         raise HTTPException(
@@ -270,13 +275,13 @@ async def grant_manual_award(
         
         # Convert to response schema
         award_info = award_data_full[0]
-        template_schema = {
-            "id": award_info["template_id"],
-            "name": award_info["template"]["name"],
-            "description": award_info["template"]["description"],
-            "category": award_info["template"]["category"],
-            "metadata": award_info["template"]["metadata"]
-        }
+        template_schema = AwardTemplateSchema(
+            id=award_info["template_id"],
+            name=award_info["template"]["name"],
+            description=award_info["template"]["description"],
+            category=award_info["template"]["category"],
+            metadata=award_info["template"]["metadata"]
+        )
         
         award_schema = UserAwardSchema(
             id=award_info["id"],
@@ -306,7 +311,7 @@ async def grant_manual_award(
         )
 
 
-@router.post("/awards/revoke")
+@router.post("/awards/revoke", response_model=AwardRevocationResponseSchema)
 async def revoke_award(
     revocation_data: AwardRevocationSchema,
     admin_user: User = Depends(get_current_admin_user),
@@ -331,12 +336,12 @@ async def revoke_award(
                 detail="Award not found"
             )
         
-        return {
-            "message": "Award revoked successfully",
-            "award_id": revocation_data.award_id,
-            "reason": revocation_data.reason,
-            "revoked_by": admin_user.id
-        }
+        return AwardRevocationResponseSchema(
+            message="Award revoked successfully",
+            award_id=revocation_data.award_id,
+            reason=revocation_data.reason,
+            revoked_by=admin_user.id
+        )
         
     except HTTPException:
         raise

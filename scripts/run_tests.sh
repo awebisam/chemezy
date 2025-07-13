@@ -12,7 +12,8 @@
 set -e
 
 # Configuration
-BASE_URL="http://localhost:8000/api/v1"
+CORE_URL="http://localhost:8000"
+BASE_URL="$CORE_URL/api/v1"
 TEST_DIR="tests"
 VERBOSE=false
 SUITE=""
@@ -99,6 +100,11 @@ run_test() {
 reset_database() {
     log_info "Resetting database with fresh migrations..."
     
+    # Stop any running server to release database locks
+    log_info "Stopping any running servers..."
+    pkill -f "uvicorn app.main:app" 2>/dev/null || true
+    sleep 2
+    
     # Remove existing database
     if [[ -f "chemezy.db" ]]; then
         rm -f chemezy.db
@@ -115,6 +121,12 @@ reset_database() {
     log_info "Running database migrations..."
     if alembic upgrade head > /dev/null 2>&1; then
         log_success "Database migrations completed"
+        
+        # Restart the server with testing environment
+        log_info "Starting server..."
+        TESTING=true nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > server.log 2>&1 &
+        sleep 3
+        
         return 0
     else
         log_error "Database migrations failed"
@@ -125,9 +137,10 @@ reset_database() {
 
 # Check if server is running
 check_server() {
-    log_info "Checking if server is running at $BASE_URL..."
+    log_info "Checking if server is running at $CORE_URL..."
     
-    if curl -s -f "$BASE_URL/health" > /dev/null 2>&1; then
+
+    if curl -s -f "$CORE_URL/health" > /dev/null 2>&1; then
         log_success "Server is running"
         return 0
     else
@@ -188,9 +201,10 @@ main() {
     
     echo ""
     
-    # Export BASE_URL for test scripts
+    # Export environment variables for test scripts
     export BASE_URL
     export VERBOSE
+    export TESTING=true
     
     # Run specific suite or all suites
     if [[ -n "$SUITE" ]]; then

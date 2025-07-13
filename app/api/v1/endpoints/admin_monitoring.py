@@ -12,6 +12,15 @@ from app.db.session import get_session
 from app.models.user import User
 from app.models.audit_log import AuditAction, AuditLogResponse
 from app.services.audit_service import AuditService, AuditServiceError
+from app.schemas.admin_monitoring import (
+    SystemHealthSchema,
+    UserActivitySchema,
+    MonitoringAlertsSchema,
+    LogCleanupResponseSchema,
+    AdminDashboardSchema,
+    AlertSummarySchema,
+    RecentActivitySchema
+)
 
 router = APIRouter()
 
@@ -63,7 +72,7 @@ async def get_audit_logs(
         )
 
 
-@router.get("/system-health")
+@router.get("/system-health", response_model=SystemHealthSchema)
 async def get_system_health(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -77,11 +86,11 @@ async def get_system_health(
         audit_service = AuditService(db)
         health_stats = await audit_service.get_system_health_stats()
         
-        return {
-            "system_health": health_stats,
-            "checked_at": datetime.utcnow(),
-            "checked_by": admin_user.username
-        }
+        return SystemHealthSchema(
+            system_health=health_stats,
+            checked_at=datetime.utcnow(),
+            checked_by=admin_user.username
+        )
         
     except AuditServiceError as e:
         raise HTTPException(
@@ -95,7 +104,7 @@ async def get_system_health(
         )
 
 
-@router.get("/user-activity/{user_id}")
+@router.get("/user-activity/{user_id}", response_model=UserActivitySchema)
 async def get_user_activity(
     user_id: int,
     admin_user: User = Depends(get_current_admin_user),
@@ -110,11 +119,11 @@ async def get_user_activity(
         audit_service = AuditService(db)
         activity_stats = await audit_service.get_user_activity_stats(user_id)
         
-        return {
-            "user_activity": activity_stats,
-            "checked_at": datetime.utcnow(),
-            "checked_by": admin_user.username
-        }
+        return UserActivitySchema(
+            user_activity=activity_stats,
+            checked_at=datetime.utcnow(),
+            checked_by=admin_user.username
+        )
         
     except AuditServiceError as e:
         raise HTTPException(
@@ -128,7 +137,7 @@ async def get_user_activity(
         )
 
 
-@router.get("/alerts")
+@router.get("/alerts", response_model=MonitoringAlertsSchema)
 async def get_monitoring_alerts(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -142,12 +151,12 @@ async def get_monitoring_alerts(
         audit_service = AuditService(db)
         alerts = await audit_service.get_monitoring_alerts()
         
-        return {
-            "alerts": alerts,
-            "alert_count": len(alerts),
-            "checked_at": datetime.utcnow(),
-            "checked_by": admin_user.username
-        }
+        return MonitoringAlertsSchema(
+            alerts=alerts,
+            alert_count=len(alerts),
+            checked_at=datetime.utcnow(),
+            checked_by=admin_user.username
+        )
         
     except AuditServiceError as e:
         raise HTTPException(
@@ -161,7 +170,7 @@ async def get_monitoring_alerts(
         )
 
 
-@router.post("/cleanup-logs")
+@router.post("/cleanup-logs", response_model=LogCleanupResponseSchema)
 async def cleanup_old_logs(
     days_to_keep: int = Query(90, ge=7, le=365, description="Number of days of logs to keep"),
     admin_user: User = Depends(get_current_admin_user),
@@ -187,13 +196,13 @@ async def cleanup_old_logs(
             }
         )
         
-        return {
-            "success": True,
-            "deleted_count": deleted_count,
-            "days_kept": days_to_keep,
-            "cleaned_at": datetime.utcnow(),
-            "cleaned_by": admin_user.username
-        }
+        return LogCleanupResponseSchema(
+            success=True,
+            deleted_count=deleted_count,
+            days_kept=days_to_keep,
+            cleaned_at=datetime.utcnow(),
+            cleaned_by=admin_user.username
+        )
         
     except AuditServiceError as e:
         raise HTTPException(
@@ -207,7 +216,7 @@ async def cleanup_old_logs(
         )
 
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=AdminDashboardSchema)
 async def get_admin_dashboard(
     admin_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_session)
@@ -229,31 +238,33 @@ async def get_admin_dashboard(
         # Get recent audit logs
         recent_logs = await audit_service.get_audit_logs(limit=20)
         
-        dashboard_data = {
-            "system_health": health_stats,
-            "alerts": {
-                "items": alerts,
-                "count": len(alerts),
-                "critical_count": len([a for a in alerts if a.get("severity") == "critical"]),
-                "warning_count": len([a for a in alerts if a.get("severity") == "warning"])
-            },
-            "recent_activity": [
-                {
-                    "id": log.id,
-                    "action": log.action,
-                    "user_id": log.user_id,
-                    "entity_type": log.entity_type,
-                    "entity_id": log.entity_id,
-                    "status": log.status,
-                    "created_at": log.created_at
-                }
-                for log in recent_logs
-            ],
-            "generated_at": datetime.utcnow(),
-            "generated_by": admin_user.username
-        }
+        recent_activity = [
+            RecentActivitySchema(
+                id=log.id,
+                action=log.action,
+                user_id=log.user_id,
+                entity_type=log.entity_type,
+                entity_id=log.entity_id,
+                status=log.status,
+                created_at=log.created_at
+            )
+            for log in recent_logs
+        ]
         
-        return dashboard_data
+        alerts_summary = AlertSummarySchema(
+            items=alerts,
+            count=len(alerts),
+            critical_count=len([a for a in alerts if a.get("severity") == "critical"]),
+            warning_count=len([a for a in alerts if a.get("severity") == "warning"])
+        )
+        
+        return AdminDashboardSchema(
+            system_health=health_stats,
+            alerts=alerts_summary,
+            recent_activity=recent_activity,
+            generated_at=datetime.utcnow(),
+            generated_by=admin_user.username
+        )
         
     except AuditServiceError as e:
         raise HTTPException(

@@ -34,3 +34,11 @@ class ReactionPredictionDSPyOutput(BaseModel):
     products: List[ProductOutputDSPy]
     effects: List[Effect]
     explanation: str
+
+class UserReactionStatsSchema(BaseModel):
+    """Schema for user reaction statistics response."""
+    total_reactions: int
+    total_discoveries: int
+
+    class Config:
+        from_attributes = True

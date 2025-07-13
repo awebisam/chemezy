@@ -18,7 +18,17 @@ from app.schemas.award import (
     AvailableAwardSchema,
     LeaderboardEntrySchema,
     UserAwardsResponseSchema,
-    AvailableAwardsResponseSchema
+    AvailableAwardsResponseSchema,
+    DashboardStatsSchema,
+    RecentAwardsSchema,
+    AwardProgressSchema,
+    AwardNotificationsSchema,
+    NotificationMarkReadSchema,
+    NotificationMarkReadResponseSchema,
+    UserRankSchema,
+    RecentAchievementsSchema,
+    CommunityStatisticsSchema,
+    AwardTemplateSchema
 )
 
 router = APIRouter()
@@ -58,13 +68,13 @@ async def get_my_awards(
         awards = []
         for award_data in awards_data:
             # Create template schema
-            template_schema = {
-                "id": award_data["template_id"],
-                "name": award_data["template"]["name"],
-                "description": award_data["template"]["description"],
-                "category": award_data["template"]["category"],
-                "metadata": award_data["template"]["metadata"]
-            }
+            template_schema = AwardTemplateSchema(
+                id=award_data["template_id"],
+                name=award_data["template"]["name"],
+                description=award_data["template"]["description"],
+                category=award_data["template"]["category"],
+                metadata=award_data["template"]["metadata"]
+            )
             
             # Create award schema
             award_schema = UserAwardSchema(
@@ -250,13 +260,13 @@ async def get_user_awards(
         awards = []
         for award_data in awards_data:
             # Create template schema
-            template_schema = {
-                "id": award_data["template_id"],
-                "name": award_data["template"]["name"],
-                "description": award_data["template"]["description"],
-                "category": award_data["template"]["category"],
-                "metadata": award_data["template"]["metadata"]
-            }
+            template_schema = AwardTemplateSchema(
+                id=award_data["template_id"],
+                name=award_data["template"]["name"],
+                description=award_data["template"]["description"],
+                category=award_data["template"]["category"],
+                metadata=award_data["template"]["metadata"]
+            )
             
             # Create award schema
             award_schema = UserAwardSchema(
@@ -337,7 +347,7 @@ async def get_overall_leaderboard(
         )
 
 
-@router.get("/leaderboard/my-rank")
+@router.get("/leaderboard/my-rank", response_model=UserRankSchema)
 async def get_my_rank(
     category: Optional[AwardCategory] = Query(None, description="Category to check rank in (None for overall)"),
     current_user: User = Depends(get_current_user),
@@ -359,16 +369,16 @@ async def get_my_rank(
         )
         
         if not rank_data:
-            return {
-                "rank": None,
-                "user_id": current_user.id,
-                "username": current_user.username,
-                "award_count": 0,
-                "total_points": 0,
-                "category": category.value if category else "overall"
-            }
+            return UserRankSchema(
+                rank=None,
+                user_id=current_user.id,
+                username=current_user.username,
+                award_count=0,
+                total_points=0,
+                category=category.value if category else "overall"
+            )
         
-        return rank_data
+        return UserRankSchema(**rank_data)
         
     except LeaderboardServiceError as e:
         raise HTTPException(
@@ -382,7 +392,7 @@ async def get_my_rank(
         )
 
 
-@router.get("/community/recent-achievements")
+@router.get("/community/recent-achievements", response_model=RecentAchievementsSchema)
 async def get_recent_achievements(
     limit: int = Query(20, ge=1, le=50, description="Maximum number of achievements to return"),
     category: Optional[AwardCategory] = Query(None, description="Filter by award category"),
@@ -405,10 +415,10 @@ async def get_recent_achievements(
             category=category
         )
         
-        return {
-            "recent_achievements": achievements_data,
-            "total_count": len(achievements_data)
-        }
+        return RecentAchievementsSchema(
+            recent_achievements=achievements_data,
+            total_count=len(achievements_data)
+        )
         
     except LeaderboardServiceError as e:
         raise HTTPException(
@@ -422,7 +432,7 @@ async def get_recent_achievements(
         )
 
 
-@router.get("/community/statistics")
+@router.get("/community/statistics", response_model=CommunityStatisticsSchema)
 async def get_community_statistics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session)
@@ -437,10 +447,10 @@ async def get_community_statistics(
         leaderboard_service = LeaderboardService(db)
         statistics_data = await leaderboard_service.get_category_statistics()
         
-        return {
-            "category_statistics": statistics_data,
-            "generated_at": "2025-01-15T00:00:00Z"  # Current timestamp would be better
-        }
+        return CommunityStatisticsSchema(
+            category_statistics=statistics_data,
+            generated_at="2025-01-15T00:00:00Z"
+        )
         
     except LeaderboardServiceError as e:
         raise HTTPException(
@@ -454,7 +464,7 @@ async def get_community_statistics(
         )
 
 
-@router.get("/dashboard/stats")
+@router.get("/dashboard/stats", response_model=DashboardStatsSchema)
 async def get_dashboard_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session)
@@ -468,11 +478,11 @@ async def get_dashboard_stats(
         notification_service = NotificationService(db)
         stats = await notification_service.get_dashboard_stats(current_user.id)
         
-        return {
-            "user_id": current_user.id,
-            "username": current_user.username,
-            "dashboard_stats": stats
-        }
+        return DashboardStatsSchema(
+            user_id=current_user.id,
+            username=current_user.username,
+            dashboard_stats=stats
+        )
         
     except NotificationServiceError as e:
         raise HTTPException(
@@ -486,7 +496,7 @@ async def get_dashboard_stats(
         )
 
 
-@router.get("/dashboard/recent")
+@router.get("/dashboard/recent", response_model=RecentAwardsSchema)
 async def get_recent_awards(
     days_back: int = Query(7, ge=1, le=30, description="Number of days back to look for awards"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of awards to return"),
@@ -506,12 +516,12 @@ async def get_recent_awards(
             days_back=days_back
         )
         
-        return {
-            "user_id": current_user.id,
-            "recent_awards": recent_awards,
-            "days_back": days_back,
-            "total_count": len(recent_awards)
-        }
+        return RecentAwardsSchema(
+            user_id=current_user.id,
+            recent_awards=recent_awards,
+            days_back=days_back,
+            total_count=len(recent_awards)
+        )
         
     except NotificationServiceError as e:
         raise HTTPException(
@@ -525,7 +535,7 @@ async def get_recent_awards(
         )
 
 
-@router.get("/dashboard/progress")
+@router.get("/dashboard/progress", response_model=AwardProgressSchema)
 async def get_award_progress(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session)
@@ -539,10 +549,10 @@ async def get_award_progress(
         notification_service = NotificationService(db)
         progress = await notification_service.get_award_progress(current_user.id)
         
-        return {
-            "user_id": current_user.id,
-            "progress": progress
-        }
+        return AwardProgressSchema(
+            user_id=current_user.id,
+            progress=progress
+        )
         
     except NotificationServiceError as e:
         raise HTTPException(
@@ -556,7 +566,7 @@ async def get_award_progress(
         )
 
 
-@router.get("/notifications")
+@router.get("/notifications", response_model=AwardNotificationsSchema)
 async def get_award_notifications(
     unread_only: bool = Query(True, description="Only return unread notifications"),
     current_user: User = Depends(get_current_user),
@@ -574,12 +584,12 @@ async def get_award_notifications(
             unread_only=unread_only
         )
         
-        return {
-            "user_id": current_user.id,
-            "notifications": notifications,
-            "unread_only": unread_only,
-            "total_count": len(notifications)
-        }
+        return AwardNotificationsSchema(
+            user_id=current_user.id,
+            notifications=notifications,
+            unread_only=unread_only,
+            total_count=len(notifications)
+        )
         
     except NotificationServiceError as e:
         raise HTTPException(
@@ -593,9 +603,9 @@ async def get_award_notifications(
         )
 
 
-@router.post("/notifications/read")
+@router.post("/notifications/read", response_model=NotificationMarkReadResponseSchema)
 async def mark_notifications_read(
-    notification_ids: List[str],
+    request: NotificationMarkReadSchema,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session)
 ):
@@ -608,14 +618,14 @@ async def mark_notifications_read(
         notification_service = NotificationService(db)
         success = await notification_service.mark_notifications_read(
             user_id=current_user.id,
-            notification_ids=notification_ids
+            notification_ids=request.notification_ids
         )
         
-        return {
-            "success": success,
-            "marked_count": len(notification_ids),
-            "message": f"Marked {len(notification_ids)} notifications as read"
-        }
+        return NotificationMarkReadResponseSchema(
+            success=success,
+            marked_count=len(request.notification_ids),
+            message=f"Marked {len(request.notification_ids)} notifications as read"
+        )
         
     except NotificationServiceError as e:
         raise HTTPException(

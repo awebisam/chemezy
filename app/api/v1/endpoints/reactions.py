@@ -4,7 +4,7 @@ from sqlmodel import Session
 from app.db.session import get_session
 from app.models.user import User
 from app.services.reaction_service import ReactionService
-from app.schemas.reaction import ReactionRequest, ReactionPrediction
+from app.schemas.reaction import ReactionRequest, ReactionPrediction, UserReactionStatsSchema
 from app.api.v1.endpoints.users import get_current_user
 
 router = APIRouter()
@@ -51,7 +51,7 @@ async def get_reaction_cache(
     reaction_service = ReactionService(db)
     return reaction_service.get_user_reaction_cache(user_id=current_user.id)
 
-@router.get("/stats")
+@router.get("/stats", response_model=UserReactionStatsSchema)
 async def get_user_reaction_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session)
@@ -61,4 +61,4 @@ async def get_user_reaction_stats(
     """
     reaction_service = ReactionService(db)
     stats = reaction_service.get_user_reaction_stats(user_id=current_user.id)
-    return stats
+    return UserReactionStatsSchema(**stats)

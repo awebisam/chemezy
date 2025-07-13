@@ -14,7 +14,8 @@ test_health_endpoint() {
     
     local response_file="/tmp/test_health_response.json"
     
-    make_request "GET" "/health" "" "" "$response_file"
+    # Health endpoint is at root level, not under /api/v1
+    curl -s -w "HTTP_STATUS:%{http_code}\n" -X GET "http://localhost:8000/health" > "$response_file" 2>&1
     
     assert_status_code "200" "$response_file" "Health endpoint returns 200"
     

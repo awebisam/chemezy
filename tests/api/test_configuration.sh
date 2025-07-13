@@ -5,9 +5,7 @@
 source tests/helpers/test_helpers.sh
 
 # Test variables
-ADMIN_USERNAME="config_admin"
 ADMIN_PASSWORD="config_password"
-REGULAR_USERNAME="config_user"
 REGULAR_PASSWORD="config_password"
 
 # Test counter
@@ -32,14 +30,14 @@ run_test() {
 echo "Testing Configuration and Feature Flag Endpoints"
 echo "==============================================="
 
-# Create test users
+# Create test users with unique names
 log_test_info "Creating test users..."
-make_request "POST" "/auth/register" "{\"username\":\"$ADMIN_USERNAME\",\"password\":\"$ADMIN_PASSWORD\",\"email\":\"admin@test.com\"}" "Content-Type: application/json" "/tmp/config_admin_register.json"
-make_request "POST" "/auth/register" "{\"username\":\"$REGULAR_USERNAME\",\"password\":\"$REGULAR_PASSWORD\",\"email\":\"user@test.com\"}" "Content-Type: application/json" "/tmp/config_user_register.json"
+TIMESTAMP=$(date +%s)
+ADMIN_USERNAME="config_admin_$TIMESTAMP"
+REGULAR_USERNAME="config_user_$TIMESTAMP"
 
-# Get auth tokens
-ADMIN_TOKEN=$(get_auth_token "$ADMIN_USERNAME" "$ADMIN_PASSWORD")
-REGULAR_TOKEN=$(get_auth_token "$REGULAR_USERNAME" "$REGULAR_PASSWORD")
+ADMIN_TOKEN=$(setup_test_user "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "admin$TIMESTAMP@test.com")
+REGULAR_TOKEN=$(setup_test_user "$REGULAR_USERNAME" "$REGULAR_PASSWORD" "user$TIMESTAMP@test.com")
 
 if [[ -z "$ADMIN_TOKEN" || -z "$REGULAR_TOKEN" ]]; then
     log_test_error "Failed to get auth tokens"
