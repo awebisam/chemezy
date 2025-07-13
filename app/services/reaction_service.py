@@ -261,14 +261,14 @@ class ReactionService:
                 ProductOutput(
                     chemical_id=chemical.id,
                     molecular_formula=p.molecular_formula,
-                    quantity=p.quantity
+                    quantity=p.quantity,
+                    is_soluble=p.is_soluble
                 )
             )
         
         return ReactionPrediction(
             products=processed_products, 
             effects=prediction_dspy_output.effects,
-            state_of_product=prediction_dspy_output.state_of_product,
             explanation=prediction_dspy_output.explanation
         )
 
@@ -278,7 +278,8 @@ class ReactionService:
             ProductOutput(
                 chemical_id=r.id, 
                 molecular_formula=r.molecular_formula, 
-                quantity=1
+                quantity=1,
+                is_soluble=True  # Default to soluble for fallback
             ) for r in reactants
         ]
         return ReactionPrediction(products=products, effects=[], state_of_product="unknown", explanation="Fallback prediction.")

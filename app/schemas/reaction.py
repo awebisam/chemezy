@@ -30,6 +30,12 @@ class ReactionPrediction(BaseModel):
     explanation: str
     is_world_first: bool = False
 
+    # DEPRECATED: Use ProductOutputDSPy instead
+    state_of_product: Optional[str] = Field(
+        None,
+        description="The state of matter of the products, if applicable. Can be 'solid', 'liquid', 'gas', or 'plasma'."
+    )
+
 class ReactionPredictionDSPyOutput(BaseModel):
     products: List[ProductOutputDSPy]
     effects: List[Effect]

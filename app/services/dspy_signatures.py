@@ -71,5 +71,5 @@ class PredictReactionProductsAndEffects(dspy.Signature):
     )
 
     prediction: ReactionPredictionDSPyOutput = dspy.OutputField(
-        desc="A structured prediction of the reaction outcome, conforming to the Pydantic schema."
+        desc="A structured prediction of the reaction outcome, conforming to the Pydantic schema.",
     )

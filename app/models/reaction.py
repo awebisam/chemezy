@@ -12,7 +12,6 @@ class ReactionCache(SQLModel, table=True):
     reactants: list[str] = Field(sa_column=Column(JSON))
     environment: str = Field(max_length=100)
     products: list[dict] = Field(sa_column=Column(JSON))
-    state_of_product: str = Field(max_length=100)
     effects: list[str] = Field(sa_column=Column(JSON))
     explanation: str = Field(max_length=2000)
     description: Optional[str] = Field(default=None, max_length=1000)

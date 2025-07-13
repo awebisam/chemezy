@@ -9,147 +9,372 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <style>
-        /* Custom styles for a better dark mode and Choices.js */
+        /* === ROOT VARIABLES for a professional, modern theme === */
+        :root {
+            --color-primary: #3b82f6; /* blue-500 */
+            --color-primary-dark: #2563eb; /* blue-600 */
+            --color-secondary: #8b5cf6; /* violet-500 */
+            --color-accent: #10b981; /* emerald-500 */
+            --color-warning: #f59e0b; /* amber-500 */
+            --color-error: #ef4444; /* red-500 */
+            --color-success: #22c55e; /* green-500 */
+            
+            --color-bg-primary: #0f172a; /* slate-900 */
+            --color-bg-secondary: #1e293b; /* slate-800 */
+            --color-bg-tertiary: #334155; /* slate-700 */
+            --color-bg-input: #334155; /* slate-700 */
+            
+            --color-text-primary: #f8fafc; /* slate-50 */
+            --color-text-secondary: #cbd5e1; /* slate-300 */
+            --color-text-muted: #94a3b8; /* slate-400 */
+            --color-text-placeholder: #64748b; /* slate-500 */
+            
+            --color-border: #475569; /* slate-600 */
+            --color-border-light: #64748b; /* slate-500 */
+            
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            
+            --transition: all 0.2s ease-in-out;
+        }
+
+        /* === GLOBAL STYLES === */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--color-bg-primary);
+            min-height: 100vh;
+        }
+
+        /* === GLASSMORPHISM EFFECTS === */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* === BUTTON SYSTEM === */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success { background: var(--color-success); color: white; }
+        .btn-error { background: var(--color-error); color: white; }
+        .btn-warning { background: var(--color-warning); color: white; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+
+        /* === FORM INPUTS === */
+        .input {
+            background: var(--color-bg-input);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            color: var(--color-text-primary);
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .input::placeholder { color: var(--color-text-placeholder); }
+
+        /* === CARDS === */
+        .card {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+        
+        /* FIX: This specific card needs to allow its children (dropdowns) to be visible outside its bounds */
+        .reaction-simulator-card {
+            overflow: visible;
+        }
+
+        .card-header {
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            color: var(--color-text-primary);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        /* === CHOICES.JS CUSTOM STYLING === */
+        .choices { z-index: 10; }
+        .choices.is-open { z-index: 20; }
+
         .choices__inner {
-            background-color: #374151; /* bg-gray-700 */
-            border: 1px solid #4b5563; /* border-gray-600 */
-            color: white;
+            background: var(--color-bg-input);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            border-radius: var(--radius-md);
+            min-height: 44px;
+            padding: 0.5rem 1rem;
+            transition: var(--transition);
         }
+
+        .is-focused .choices__inner {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
         .choices__list--dropdown, .choices__list[aria-expanded] {
-            background-color: #374151; /* bg-gray-700 */
-            border-color: #4b5563; /* border-gray-600 */
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            margin-top: 4px;
         }
-        .choices__list--single .choices__item {
+
+        .choices__list--single .choices__item { color: var(--color-text-primary); }
+
+        .choices__option {
+            color: var(--color-text-secondary);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .choices__option:last-child { border-bottom: none; }
+
+        /* FIX: Correctly style highlighted dropdown items for readability */
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: var(--color-primary);
             color: white;
         }
-        .choices__option--choice {
-            color: #d1d5db; /* text-gray-300 */
-        }
-        .choices__option--choice:hover {
-            background-color: #4b5563; /* bg-gray-600 */
-        }
-        .choices[data-type*="select-one"]::after {
-            border-color: white transparent transparent;
-        }
-        /* Custom scrollbar */
+        
+        .choices__placeholder { color: var(--color-text-placeholder); opacity: 1; }
+        .choices[data-type*="select-one"]::after { border-color: var(--color-text-secondary) transparent transparent; }
+
+        /* === SCROLLBAR === */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        ::-webkit-scrollbar-track { background: var(--color-bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-border-light); }
+
+        /* === ANIMATIONS === */
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .notification-animation { animation: slideIn 0.5s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* === PROGRESS BAR === */
+        .progress-bar { background: var(--color-bg-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+        .progress-bar-inner {
+            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            text-align: center;
+            color: white;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            font-weight: 600;
+        }
     </style>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="bg-gray-900 text-gray-200 font-sans antialiased">
 
     <!-- Notification Container -->
-    <div id="notification" class="fixed top-5 right-5 bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg z-50 hidden transition-opacity duration-300">
-        <p id="notification-message"></p>
-    </div>
+    <div id="notification-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
 
     <!-- Auth Modal -->
     <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-40">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-sm">
+        <div class="glass p-8 rounded-lg w-full max-w-sm fade-in">
             <h2 class="text-white text-2xl font-bold mb-6 text-center">Welcome to Chemezy</h2>
             <div class="space-y-4">
-                <input type="text" id="username" placeholder="Username" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" id="password" placeholder="Password" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 rounded-md px-4 py-2 font-bold transition-colors">Login</button>
+                <input type="text" id="username" placeholder="Username" class="input">
+                <input type="password" id="password" placeholder="Password" class="input">
+                <button id="login-btn" class="btn btn-primary w-full">Login</button>
             </div>
         </div>
     </div>
 
     <!-- Main App -->
     <div id="app-section" class="hidden">
-        <header class="bg-gray-800 shadow-md p-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Chemezy Dashboard</h1>
-            <div class="text-sm">Logged in as: <span id="user-display" class="font-semibold"></span></div>
+        <header class="glass p-4 flex justify-between items-center border-b border-border-light sticky top-0 z-30">
+            <h1 class="text-2xl font-bold text-white">Chemezy Dashboard</h1>
+            <div class="flex items-center space-x-4">
+                <div class="text-sm text-text-secondary">Logged in as: <span id="user-display" class="font-semibold text-primary"></span></div>
+                <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
+            </div>
         </header>
 
-        <main class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-            <!-- Left Column: Controls -->
-            <div class="space-y-6">
-                <!-- Reaction Simulator -->
-                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Reaction Simulator</h2>
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- FIX: Added 'reaction-simulator-card' class to apply overflow fix -->
+                <div class="card fade-in reaction-simulator-card">
+                    <div class="card-header"><h2 class="card-title">Reaction Simulator</h2></div>
                     <div class="space-y-4">
                         <div>
-                            <label class="block mb-2 font-semibold">Reactants</label>
+                            <label class="block mb-2 font-semibold text-text-secondary">Reactants</label>
                             <div id="reactants-list" class="space-y-2"></div>
-                            <button id="add-reactant-btn" class="mt-2 bg-green-600 hover:bg-green-700 text-sm rounded px-3 py-1 transition-colors">+ Add Reactant</button>
+                            <button id="add-reactant-btn" class="mt-2 btn btn-success btn-sm">+ Add Reactant</button>
                         </div>
                         <div>
-                            <label for="catalyst-selector" class="block mb-2 font-semibold">Catalyst (Optional)</label>
+                            <label for="catalyst-selector" class="block mb-2 font-semibold text-text-secondary">Catalyst (Optional)</label>
                             <select id="catalyst-selector"></select>
                         </div>
-                        <button id="run-reaction-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 rounded-md px-4 py-2 font-bold transition-colors">Run Reaction</button>
+                        <button id="run-reaction-btn" class="btn btn-primary w-full">Run Reaction</button>
                     </div>
                 </div>
-
-                <!-- Debug Zone -->
-                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Debug Zone</h2>
-                    <div class="space-y-4">
-                        <!-- Delete Single Item -->
-                        <div>
-                            <h3 class="font-semibold mb-2">Request Item Deletion</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="delete-chemical-selector" class="block text-sm mb-1">Chemical</label>
-                                    <select id="delete-chemical-selector"></select>
-                                </div>
-                                <div>
-                                    <label for="delete-reaction-selector" class="block text-sm mb-1">Reaction</label>
-                                    <select id="delete-reaction-selector"></select>
-                                </div>
-                            </div>
-                            <textarea id="delete-reason" placeholder="Reason for deletion..." class="mt-2 w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm h-20 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                            <button id="request-delete-btn" class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-sm rounded px-3 py-1 transition-colors">Request Deletion</button>
-                        </div>
-                        <!-- Clear All -->
-                        <div>
-                            <h3 class="font-semibold mb-2">Clear Database Collections</h3>
-                            <div class="flex space-x-4">
-                                <button id="clear-chemicals-btn" class="w-full bg-red-700 hover:bg-red-800 rounded-md px-4 py-2 font-bold transition-colors">Clear All Chemicals</button>
-                                <button id="clear-reactions-btn" class="w-full bg-red-700 hover:bg-red-800 rounded-md px-4 py-2 font-bold transition-colors">Clear All Reactions</button>
-                            </div>
-                        </div>
+                 <div class="card fade-in h-full flex flex-col">
+                    <div class="card-header"><h2 class="card-title">Results & Logs</h2></div>
+                    <div id="results-output" class="prose prose-invert max-w-none text-text-secondary flex-grow overflow-y-auto pr-2">
+                        <p>Run a reaction or a debug command to see the output here.</p>
                     </div>
                 </div>
             </div>
-
-            <!-- Right Column: Results -->
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Results & Logs</h2>
-                <div id="results-output" class="prose prose-invert max-w-none text-gray-300">
-                    <p>Run a reaction or a debug command to see the output here.</p>
+            
+            <!-- Sidebar Column -->
+            <div class="lg:col-span-1 space-y-6">
+                 <div class="card fade-in">
+                    <div class="card-header"><h2 class="card-title">Add New Chemical</h2></div>
+                    <div class="space-y-4">
+                        <input type="text" id="chemical-formula" placeholder="e.g., C6H12O6" class="input">
+                        <button id="add-chemical-btn" class="btn btn-success w-full">Add Chemical</button>
+                    </div>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-header"><h2 class="card-title">Awards & Progress</h2></div>
+                    <div id="awards-dashboard" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-header"><h2 class="card-title">Leaderboard</h2></div>
+                    <div class="flex space-x-2 mb-4">
+                        <select id="leaderboard-category-selector" class="flex-grow"></select>
+                        <button id="fetch-leaderboard-btn" class="btn btn-primary btn-sm">Fetch</button>
+                    </div>
+                    <div id="leaderboard-output" class="text-sm max-h-60 overflow-y-auto pr-2 text-text-secondary"></div>
+                </div>
+                <div class="card fade-in">
+                    <div class="card-header"><h2 class="card-title">Debug Zone</h2></div>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-semibold mb-2 text-text-secondary">Request Item Deletion</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="delete-chemical-selector" class="block text-sm mb-1 text-text-muted">Chemical</label>
+                                    <select id="delete-chemical-selector"></select>
+                                </div>
+                                <div>
+                                    <label for="delete-reaction-selector" class="block text-sm mb-1 text-text-muted">Reaction</label>
+                                    <select id="delete-reaction-selector"></select>
+                                </div>
+                            </div>
+                            <textarea id="delete-reason" placeholder="Reason for deletion..." class="mt-2 input text-sm h-20"></textarea>
+                            <button id="request-delete-btn" class="mt-2 btn btn-warning w-full btn-sm">Request Deletion</button>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-2 text-text-secondary">Clear Database Collections</h3>
+                            <div class="flex space-x-4">
+                                <button id="clear-chemicals-btn" class="btn btn-error w-full">Clear Chemicals</button>
+                                <button id="clear-reactions-btn" class="btn btn-error w-full">Clear Reactions</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Reactant Row Template -->
+    <!-- Template for a single reactant row -->
     <template id="reactant-row-template">
-        <div class="flex items-center space-x-2 reactant-row">
+        <div class="flex items-center space-x-2 reactant-row fade-in">
             <select class="reactant-selector flex-grow"></select>
-            <button class="remove-reactant-btn bg-red-600 hover:bg-red-700 text-xs rounded px-2 py-1 transition-colors">Remove</button>
+            <button class="remove-reactant-btn btn btn-error btn-sm">X</button>
         </div>
     </template>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- CONFIG & STATE ---
-        const API_BASE_URL = '/api/v1';
-        let authToken = null;
-        let chemicals = [];
-        let reactions = [];
-        let choicesInstances = {};
+        // --- MODULE: State Management ---
+        const State = {
+            authToken: null,
+            username: null,
+            chemicals: [],
+            reactions: [],
+            myAwards: [],
+            availableAwards: [],
+            awardCategories: ["discovery", "database_contribution", "community", "special", "achievement"],
+            choicesInstances: {},
+            saveToStorage() {
+                if (this.authToken && this.username) {
+                    localStorage.setItem('chemezy_auth_token', this.authToken);
+                    localStorage.setItem('chemezy_username', this.username);
+                }
+            },
+            loadFromStorage() {
+                const token = localStorage.getItem('chemezy_auth_token');
+                const username = localStorage.getItem('chemezy_username');
+                if (token && username) {
+                    this.authToken = token;
+                    this.username = username;
+                    return true;
+                }
+                return false;
+            },
+            clearStorage() {
+                localStorage.removeItem('chemezy_auth_token');
+                localStorage.removeItem('chemezy_username');
+                this.authToken = null;
+                this.username = null;
+            }
+        };
 
-        // --- DOM ELEMENTS ---
-        const ui = {
-            notification: document.getElementById('notification'),
-            notificationMessage: document.getElementById('notification-message'),
+        // --- MODULE: UI Elements ---
+        const UI = {
+            notificationContainer: document.getElementById('notification-container'),
             authModal: document.getElementById('auth-modal'),
             loginBtn: document.getElementById('login-btn'),
+            logoutBtn: document.getElementById('logout-btn'),
             usernameInput: document.getElementById('username'),
             passwordInput: document.getElementById('password'),
             appSection: document.getElementById('app-section'),
@@ -159,26 +384,31 @@
             runReactionBtn: document.getElementById('run-reaction-btn'),
             resultsOutput: document.getElementById('results-output'),
             reactantRowTemplate: document.getElementById('reactant-row-template'),
-            // Debug
+            awardsDashboard: document.getElementById('awards-dashboard'),
+            leaderboardCategorySelector: document.getElementById('leaderboard-category-selector'),
+            fetchLeaderboardBtn: document.getElementById('fetch-leaderboard-btn'),
+            leaderboardOutput: document.getElementById('leaderboard-output'),
             clearChemicalsBtn: document.getElementById('clear-chemicals-btn'),
             clearReactionsBtn: document.getElementById('clear-reactions-btn'),
             requestDeleteBtn: document.getElementById('request-delete-btn'),
             deleteReason: document.getElementById('delete-reason'),
+            addChemicalBtn: document.getElementById('add-chemical-btn'),
+            chemicalFormulaInput: document.getElementById('chemical-formula'),
         };
 
-        // --- API SERVICE ---
-        const api = {
+        // --- MODULE: API Service ---
+        const API = {
+            BASE_URL: '/api/v1',
             async _request(endpoint, options = {}) {
                 const headers = { 'Content-Type': 'application/json', ...options.headers };
-                if (authToken) {
-                    headers['Authorization'] = `Bearer ${authToken}`;
+                if (State.authToken) {
+                    headers['Authorization'] = `Bearer ${State.authToken}`;
                 }
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+                const response = await fetch(`${this.BASE_URL}${endpoint}`, { ...options, headers });
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
                     throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
                 }
-                // Handle no content response
                 if (response.status === 204) return null;
                 return response.json();
             },
@@ -186,219 +416,359 @@
                 const formData = new URLSearchParams();
                 formData.append('username', username);
                 formData.append('password', password);
-                return this._request('/auth/token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData,
+                return this._request('/auth/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
+            },
+            getChemicals: () => API._request('/chemicals/'),
+            createChemical: (body) => API._request('/chemicals/', { method: 'POST', body: JSON.stringify(body) }),
+            getReactions: () => API._request('/reactions/cache'),
+            runReaction: (body) => API._request('/reactions/react', { method: 'POST', body: JSON.stringify(body) }),
+            getMyAwards: () => API._request('/awards/me'),
+            getAvailableAwards: () => API._request('/awards/available'),
+            getLeaderboard: (category) => API._request(`/awards/leaderboard/${category}`),
+            clearAllChemicals: () => API._request('/debug/chemicals/clear', { method: 'DELETE' }),
+            clearAllReactions: () => API._request('/debug/reactions/clear', { method: 'DELETE' }),
+            requestDelete: (type, id, reason) => API._request(`/debug/${type}/${id}`, { method: 'DELETE', body: JSON.stringify({ reason }) }),
+        };
+
+        // --- MODULE: UI Renderer ---
+        const Renderer = {
+            showNotification(message, type = 'info') {
+                const colors = { info: 'bg-blue-600', success: 'bg-green-600', error: 'bg-red-600' };
+                const notif = document.createElement('div');
+                notif.className = `text-white py-2 px-4 rounded-lg shadow-lg notification-animation ${colors[type]}`;
+                notif.textContent = message;
+                UI.notificationContainer.appendChild(notif);
+                setTimeout(() => {
+                    notif.style.opacity = '0';
+                    notif.style.transition = 'opacity 0.5s';
+                    setTimeout(() => notif.remove(), 500);
+                }, 4000);
+            },
+            renderGenericResults(title, data) {
+                let content = `<h3 class="font-bold text-white mb-2">${title}</h3>`;
+                content += `<pre class="whitespace-pre-wrap text-sm bg-gray-900 p-3 rounded-md">${JSON.stringify(data, null, 2)}</pre>`;
+                UI.resultsOutput.innerHTML = content;
+            },
+            renderReactionResults(data) {
+                let html = `<h3 class="font-bold text-white mb-2">Reaction Complete</h3>`;
+                if (data.is_world_first) {
+                    html += `<p class="text-yellow-400 font-bold p-3 bg-yellow-900/50 rounded-md mb-3">🏆 Congratulations! You've made a World-First Discovery!</p>`;
+                }
+                html += `<div class="space-y-3">`;
+                html += `<div><strong class="text-text-muted">Explanation:</strong> <p>${data.explanation}</p></div>`;
+                html += `<div><strong class="text-text-muted">Products:</strong> <ul class="list-disc list-inside mt-1">`;
+                data.products.forEach(p => {
+                    const chemical = State.chemicals.find(c => c.id === p.chemical_id);
+                    const name = chemical && chemical.common_name ? `${chemical.common_name} (${p.molecular_formula})` : p.molecular_formula;
+                    html += `<li>${name} - Quantity: ${p.quantity.toFixed(2)}</li>`;
+                });
+                html += `</ul></div>`;
+                if (data.effects && data.effects.length > 0) {
+                    html += `<div><strong class="text-text-muted">Effects:</strong> <ul class="list-disc list-inside mt-1">`;
+                    data.effects.forEach(e => {
+                        html += `<li>${e.effect_type} (Intensity: ${e.intensity}, Color: <span style="color:${e.color}; font-weight:bold;">${e.color}</span>)</li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                html += `</div>`;
+                UI.resultsOutput.innerHTML = html;
+            },
+            createChoices(elementOrId, options = {}) {
+                const id = typeof elementOrId === 'string' ? elementOrId : (elementOrId.id || (elementOrId.id = `choices-${Math.random()}`));
+                if (State.choicesInstances[id]) {
+                    State.choicesInstances[id].destroy();
+                }
+                const element = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+                if (!element) return null;
+                const instance = new Choices(element, { itemSelectText: '', searchResultLimit: 100, shouldSort: false, ...options });
+                State.choicesInstances[id] = instance;
+                return instance;
+            },
+            populateChoices(instance, data, placeholder) {
+                if (!instance) return;
+                instance.clearStore();
+                instance.setChoices([{ value: '', label: placeholder, selected: true, disabled: true }, ...data], 'value', 'label', false);
+            },
+            renderAwardsDashboard() {
+                const { myAwards, availableAwards } = State;
+                let html = `
+                    <div>
+                        <h3 class="font-semibold text-white mb-2">My Awards (${myAwards.length})</h3>
+                        <div class="space-y-2">
+                            ${myAwards.length > 0 ? myAwards.map(this.renderAwardCard).join('') : '<p class="text-sm text-text-muted">You have not earned any awards yet.</p>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white mb-2 mt-4">Available Awards</h3>
+                        <div class="space-y-2">
+                            ${availableAwards.length > 0 ? availableAwards.map(this.renderAvailableAwardCard).join('') : '<p class="text-sm text-text-muted">No new awards available.</p>'}
+                        </div>
+                    </div>
+                `;
+                UI.awardsDashboard.innerHTML = html;
+            },
+            renderAwardCard(award) {
+                const { template, tier, granted_at } = award;
+                return `
+                    <div class="bg-bg-tertiary p-3 rounded-md text-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-secondary">${template.name} (Tier ${tier})</span>
+                            <span class="text-xs text-text-muted">${new Date(granted_at).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-text-secondary mt-1">${template.description}</p>
+                    </div>
+                `;
+            },
+            renderAvailableAwardCard(award) {
+                const { name, description, progress } = award;
+                const percentage = progress.percentage || 0;
+                return `
+                    <div class="bg-bg-tertiary p-3 rounded-md text-sm">
+                        <p class="font-bold text-text-secondary">${name}</p>
+                        <p class="text-text-muted mt-1 text-xs">${description}</p>
+                        <div class="mt-2">
+                            <div class="progress-bar"><div class="progress-bar-inner" style="width: ${percentage}%;">${percentage.toFixed(0)}%</div></div>
+                            <p class="text-xs text-right text-text-muted mt-1">${progress.current_value} / ${progress.target_value}</p>
+                        </div>
+                    </div>
+                `;
+            },
+            renderLeaderboard(leaderboardData) {
+                if (!leaderboardData || leaderboardData.length === 0) {
+                    UI.leaderboardOutput.innerHTML = '<p>No data available for this category.</p>';
+                    return;
+                }
+                let html = '<table class="w-full text-left">';
+                html += '<thead><tr class="border-b border-border"><th class="py-1">Rank</th><th class="py-1">User</th><th class="py-1">Points</th></tr></thead><tbody>';
+                leaderboardData.forEach(entry => {
+                    html += `<tr class="border-b border-border-light"><td class="py-1 pr-2">${entry.rank}</td><td class="py-1 pr-2">${entry.username}</td><td class="py-1">${entry.total_points}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                UI.leaderboardOutput.innerHTML = html;
+            }
+        };
+
+        // --- MODULE: Application Logic ---
+        const App = {
+            init() {
+                UI.loginBtn.addEventListener('click', () => this.handleLogin());
+                UI.logoutBtn.addEventListener('click', () => this.handleLogout());
+                UI.passwordInput.addEventListener('keyup', e => e.key === 'Enter' && this.handleLogin());
+                UI.addReactantBtn.addEventListener('click', () => this.addReactantSelector());
+                UI.runReactionBtn.addEventListener('click', () => this.handleRunReaction());
+                UI.fetchLeaderboardBtn.addEventListener('click', () => this.handleFetchLeaderboard());
+                UI.clearChemicalsBtn.addEventListener('click', () => this.handleDebugClear('chemicals'));
+                UI.clearReactionsBtn.addEventListener('click', () => this.handleDebugClear('reactions'));
+                UI.requestDeleteBtn.addEventListener('click', () => this.handleRequestDelete());
+                UI.addChemicalBtn.addEventListener('click', () => this.handleAddChemical());
+                this.checkStoredAuth();
+            },
+            async handleLogin() {
+                const username = UI.usernameInput.value;
+                const password = UI.passwordInput.value;
+                if (!username || !password) return Renderer.showNotification('Username and password are required.', 'error');
+                
+                UI.loginBtn.disabled = true;
+                UI.loginBtn.textContent = 'Logging in...';
+
+                try {
+                    const data = await API.login(username, password);
+                    State.authToken = data.access_token;
+                    State.username = username;
+                    State.saveToStorage();
+                    UI.authModal.classList.add('hidden');
+                    UI.appSection.classList.remove('hidden');
+                    UI.userDisplay.textContent = username;
+                    Renderer.showNotification('Login successful!', 'success');
+                    await this.loadInitialData();
+                } catch (error) {
+                    Renderer.showNotification(error.message, 'error');
+                } finally {
+                    UI.loginBtn.disabled = false;
+                    UI.loginBtn.textContent = 'Login';
+                }
+            },
+            async checkStoredAuth() {
+                if (State.loadFromStorage()) {
+                    try {
+                        await API.getChemicals();
+                        UI.authModal.classList.add('hidden');
+                        UI.appSection.classList.remove('hidden');
+                        UI.userDisplay.textContent = State.username;
+                        await this.loadInitialData();
+                        Renderer.showNotification('Welcome back!', 'success');
+                    } catch (error) {
+                        State.clearStorage();
+                        Renderer.showNotification('Session expired. Please login again.', 'error');
+                    }
+                }
+            },
+            handleLogout() {
+                State.clearStorage();
+                UI.authModal.classList.remove('hidden');
+                UI.appSection.classList.add('hidden');
+                UI.usernameInput.value = '';
+                UI.passwordInput.value = '';
+                Object.values(State.choicesInstances).forEach(instance => { try { instance.destroy(); } catch (e) {} });
+                State.choicesInstances = {};
+                Renderer.showNotification('Logged out successfully!', 'success');
+            },
+            async loadInitialData() {
+                try {
+                    const [chemicalsData, reactionsData, myAwardsData, availableAwardsData] = await Promise.all([
+                        API.getChemicals(), API.getReactions(), API.getMyAwards(), API.getAvailableAwards()
+                    ]);
+                    State.chemicals = chemicalsData.results;
+                    State.reactions = reactionsData;
+                    State.myAwards = myAwardsData;
+                    State.availableAwards = availableAwardsData;
+                    this.setupSelectors();
+                    Renderer.renderAwardsDashboard();
+                } catch (error) {
+                    Renderer.showNotification(`Failed to load initial data: ${error.message}`, 'error');
+                }
+            },
+            setupSelectors() {
+                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
+                const reactionChoices = State.reactions.map(r => ({ value: r.id, label: `Reaction #${r.id} (${r.reactants.join(', ')})` }));
+                
+                this.addReactantSelector();
+                
+                Renderer.populateChoices(Renderer.createChoices('catalyst-selector'), chemicalChoices, 'Select a catalyst (optional)');
+                Renderer.populateChoices(Renderer.createChoices('delete-chemical-selector'), chemicalChoices, 'Select a chemical');
+                Renderer.populateChoices(Renderer.createChoices('delete-reaction-selector'), reactionChoices, 'Select a reaction');
+                Renderer.populateChoices(Renderer.createChoices('leaderboard-category-selector'), State.awardCategories.map(c => ({value: c, label: c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())})), 'Select Category');
+            },
+            addReactantSelector() {
+                const templateNode = UI.reactantRowTemplate.content.cloneNode(true);
+                const newRow = templateNode.querySelector('.reactant-row');
+                UI.reactantsList.appendChild(newRow);
+                const selectorElement = newRow.querySelector('.reactant-selector');
+                const choices = Renderer.createChoices(selectorElement);
+                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
+                Renderer.populateChoices(choices, chemicalChoices, 'Select a reactant');
+                newRow.querySelector('.remove-reactant-btn').addEventListener('click', () => newRow.remove());
+            },
+            async handleRunReaction() {
+                const reactantRows = UI.reactantsList.querySelectorAll('.reactant-row');
+                const reactants = Array.from(reactantRows).map(row => {
+                    const selector = row.querySelector('.reactant-selector');
+                    const choiceInstance = State.choicesInstances[selector.id];
+                    const value = choiceInstance ? choiceInstance.getValue(true) : null;
+                    return value ? { chemical_id: parseInt(value), quantity: 1.0 } : null;
+                }).filter(Boolean);
+
+                if (reactants.length === 0) return Renderer.showNotification('Please select at least one reactant.', 'error');
+                const catalyst_id = State.choicesInstances['catalyst-selector'].getValue(true) || null;
+                
+                UI.runReactionBtn.disabled = true;
+                UI.runReactionBtn.textContent = 'Simulating...';
+                Renderer.renderGenericResults('Running Reaction...', { status: 'Processing...' });
+
+                try {
+                    const result = await API.runReaction({ reactants, catalyst_id, environment: "Earth (Normal)" });
+                    Renderer.renderReactionResults(result);
+                    Renderer.showNotification('Reaction complete!', 'success');
+                    if (result.is_world_first) {
+                        Renderer.showNotification('World-First Discovery! Refreshing awards...', 'info');
+                        const [myAwardsData, availableAwardsData] = await Promise.all([API.getMyAwards(), API.getAvailableAwards()]);
+                        State.myAwards = myAwardsData;
+                        State.availableAwards = availableAwardsData;
+                        Renderer.renderAwardsDashboard();
+                    }
+                } catch (error) {
+                    Renderer.renderGenericResults('Reaction Failed', { error: error.message });
+                    Renderer.showNotification(error.message, 'error');
+                } finally {
+                    UI.runReactionBtn.disabled = false;
+                    UI.runReactionBtn.textContent = 'Run Reaction';
+                }
+            },
+            async handleFetchLeaderboard() {
+                const category = State.choicesInstances['leaderboard-category-selector'].getValue(true);
+                if (!category) return Renderer.showNotification('Please select a leaderboard category.', 'error');
+                
+                UI.fetchLeaderboardBtn.disabled = true;
+                UI.leaderboardOutput.innerHTML = '<p>Fetching leaderboard...</p>';
+
+                try {
+                    const data = await API.getLeaderboard(category);
+                    Renderer.renderLeaderboard(data);
+                } catch (error) {
+                    UI.leaderboardOutput.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+                    Renderer.showNotification(error.message, 'error');
+                } finally {
+                    UI.fetchLeaderboardBtn.disabled = false;
+                }
+            },
+            async handleDebugClear(type) {
+                if (!confirm(`Are you sure you want to delete ALL ${type}? This action cannot be undone.`)) return;
+                try {
+                    const result = (type === 'chemicals') ? await API.clearAllChemicals() : await API.clearAllReactions();
+                    Renderer.renderGenericResults(`Cleared All ${type}`, result);
+                    Renderer.showNotification(result.message, 'success');
+                    await this.loadInitialData();
+                } catch (error) {
+                    Renderer.renderGenericResults(`Failed to clear ${type}`, { error: error.message });
+                    Renderer.showNotification(error.message, 'error');
+                }
+            },
+            async handleRequestDelete() {
+                const chemicalId = State.choicesInstances['delete-chemical-selector'].getValue(true);
+                const reactionId = State.choicesInstances['delete-reaction-selector'].getValue(true);
+                const reason = UI.deleteReason.value;
+                if ((!chemicalId && !reactionId) || (chemicalId && reactionId)) return Renderer.showNotification('Please select exactly one chemical OR one reaction to delete.', 'error');
+                if (!reason) return Renderer.showNotification('A reason for deletion is required.', 'error');
+                const type = chemicalId ? 'chemicals' : 'reactions';
+                const id = chemicalId || reactionId;
+                try {
+                    const result = await API.requestDelete(type, id, reason);
+                    Renderer.renderGenericResults('Deletion Request Submitted', result);
+                    Renderer.showNotification(result.message, 'success');
+                    UI.deleteReason.value = '';
+                    State.choicesInstances['delete-chemical-selector'].setChoiceByValue('');
+                    State.choicesInstances['delete-reaction-selector'].setChoiceByValue('');
+                } catch (error) {
+                    Renderer.renderGenericResults('Deletion Request Failed', { error: error.message });
+                    Renderer.showNotification(error.message, 'error');
+                }
+            },
+            async handleAddChemical() {
+                const molecularFormula = UI.chemicalFormulaInput.value.trim();
+                if (!molecularFormula) return Renderer.showNotification('Molecular formula is required.', 'error');
+                const formulaRegex = /^[A-Za-z0-9\(\)\[\]]+$/;
+                if (!formulaRegex.test(molecularFormula)) return Renderer.showNotification('Invalid molecular formula format.', 'error');
+                if (State.chemicals.some(c => c.molecular_formula.toLowerCase() === molecularFormula.toLowerCase())) return Renderer.showNotification('Chemical with this formula already exists.', 'error');
+
+                UI.addChemicalBtn.disabled = true;
+                UI.addChemicalBtn.textContent = 'Adding...';
+                try {
+                    const newChemical = await API.createChemical({ molecular_formula: molecularFormula });
+                    State.chemicals.push(newChemical);
+                    UI.chemicalFormulaInput.value = '';
+                    this.updateChemicalSelectors();
+                    Renderer.showNotification(`Chemical "${molecularFormula}" added successfully!`, 'success');
+                    Renderer.renderGenericResults('New Chemical Added', newChemical);
+                } catch (error) {
+                    Renderer.showNotification(error.message, 'error');
+                } finally {
+                    UI.addChemicalBtn.disabled = false;
+                    UI.addChemicalBtn.textContent = 'Add Chemical';
+                }
+            },
+            updateChemicalSelectors() {
+                const chemicalChoices = State.chemicals.map(c => ({ value: c.id, label: c.common_name ? `${c.common_name} (${c.molecular_formula})` : c.molecular_formula }));
+                Object.values(State.choicesInstances).forEach(instance => {
+                    if (instance.config.id.includes('catalyst') || instance.config.id.includes('reactant') || instance.config.id.includes('delete-chemical')) {
+                        const currentValue = instance.getValue(true);
+                        Renderer.populateChoices(instance, chemicalChoices, instance.config.placeholderValue);
+                        if (currentValue) instance.setChoiceByValue(currentValue);
+                    }
                 });
             },
-            getChemicals: () => api._request('/chemicals/'),
-            getReactions: () => api._request('/reactions/cache'), // Assuming this gets all for debug
-            runReaction: (body) => api._request('/reactions/react', { method: 'POST', body: JSON.stringify(body) }),
-            // Debug APIs
-            clearAllChemicals: () => api._request('/debug/chemicals/clear', { method: 'DELETE' }),
-            clearAllReactions: () => api._request('/debug/reactions/clear', { method: 'DELETE' }),
-            requestDelete: (type, id, reason) => api._request(`/debug/${type}/${id}`, { method: 'DELETE', body: JSON.stringify({ reason }) }),
         };
 
-        // --- UTILS & RENDERERS ---
-        const showNotification = (message, type = 'info') => {
-            ui.notificationMessage.textContent = message;
-            ui.notification.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
-            ui.notification.classList.remove('hidden');
-            setTimeout(() => ui.notification.classList.add('hidden'), 3000);
-        };
-
-        const renderResults = (title, data) => {
-            let content = `<h3>${title}</h3>`;
-            if (typeof data === 'object' && data !== null) {
-                content += `<pre class="whitespace-pre-wrap text-sm">${JSON.stringify(data, null, 2)}</pre>`;
-            } else {
-                content += `<p>${data}</p>`;
-            }
-            ui.resultsOutput.innerHTML = content;
-        };
-
-        const renderReactionResults = (data) => {
-            let html = `<h3>Reaction Complete</h3>`;
-            if (data.is_world_first) {
-                html += `<p class="text-yellow-400 font-bold">Congratulations! You've made a World-First Discovery!</p>`;
-            }
-            html += `<p><strong>Explanation:</strong> ${data.explanation}</p>`;
-            html += `<p><strong>State of Product:</strong> ${data.state_of_product}</p>`;
-            
-            html += `<h4>Products:</h4><ul>`;
-            data.products.forEach(p => {
-                html += `<li>${p.molecular_formula} (ID: ${p.chemical_id}) - Quantity: ${p.quantity}</li>`;
-            });
-            html += `</ul>`;
-
-            html += `<h4>Effects:</h4><ul>`;
-            data.effects.forEach(e => {
-                html += `<li>${e.effect_type} (Intensity: ${e.intensity}, Color: <span style="color:${e.color};">${e.color}</span>)</li>`;
-            });
-            html += `</ul>`;
-            ui.resultsOutput.innerHTML = html;
-        };
-
-        const createChoices = (selectorId, options = {}) => {
-            if (choicesInstances[selectorId]) {
-                choicesInstances[selectorId].destroy();
-            }
-            const element = document.getElementById(selectorId);
-            if (!element) return null;
-            const instance = new Choices(element, {
-                ...options,
-                itemSelectText: 'Press to select',
-                searchResultLimit: 100,
-            });
-            choicesInstances[selectorId] = instance;
-            return instance;
-        };
-
-        const populateChoices = (instance, data, placeholder) => {
-            instance.clearStore();
-            instance.setChoices([
-                { value: '', label: placeholder, selected: true, disabled: true },
-                ...data
-            ], 'value', 'label', false);
-        };
-
-        // --- INITIALIZATION ---
-        const init = async () => {
-            try {
-                const [chemicalsData, reactionsData] = await Promise.all([api.getChemicals(), api.getReactions()]);
-                chemicals = chemicalsData.results;
-                reactions = reactionsData;
-
-                const chemicalChoices = chemicals.map(c => ({ value: c.id, label: `${c.common_name} (${c.molecular_formula})` }));
-                const reactionChoices = reactions.map(r => ({ value: r.id, label: `Reaction #${r.id} (${r.reactants.join(', ')})` }));
-
-                // Init main selectors
-                addReactantSelector();
-                const catalystChoices = createChoices('catalyst-selector');
-                populateChoices(catalystChoices, chemicalChoices, 'Select a catalyst');
-
-                // Init debug selectors
-                const deleteChemicalChoices = createChoices('delete-chemical-selector');
-                populateChoices(deleteChemicalChoices, chemicalChoices, 'Select a chemical');
-                
-                const deleteReactionChoices = createChoices('delete-reaction-selector');
-                populateChoices(deleteReactionChoices, reactionChoices, 'Select a reaction');
-
-            } catch (error) {
-                showNotification(`Failed to load initial data: ${error.message}`, 'error');
-            }
-        };
-
-        const addReactantSelector = () => {
-            const templateNode = ui.reactantRowTemplate.content.cloneNode(true);
-            const newRow = templateNode.querySelector('.reactant-row');
-            ui.reactantsList.appendChild(newRow);
-            
-            const selectorElement = newRow.querySelector('.reactant-selector');
-            const choices = new Choices(selectorElement, { itemSelectText: 'Press to select' });
-            choices.setChoices([
-                { value: '', label: 'Select a reactant', selected: true, disabled: true },
-                ...chemicals.map(c => ({ value: c.id, label: `${c.common_name} (${c.molecular_formula})` }))
-            ], 'value', 'label', false);
-
-            newRow.querySelector('.remove-reactant-btn').addEventListener('click', () => newRow.remove());
-        };
-
-        // --- EVENT HANDLERS ---
-        const handleLogin = async () => {
-            const username = ui.usernameInput.value;
-            const password = ui.passwordInput.value;
-            if (!username || !password) return showNotification('Username and password are required.', 'error');
-            
-            try {
-                const data = await api.login(username, password);
-                authToken = data.access_token;
-                ui.authModal.classList.add('hidden');
-                ui.appSection.classList.remove('hidden');
-                ui.userDisplay.textContent = username;
-                showNotification('Login successful!');
-                await init();
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        };
-
-        const handleRunReaction = async () => {
-            const reactantRows = ui.reactantsList.querySelectorAll('.reactant-row');
-            const reactants = Array.from(reactantRows).map(row => {
-                const selector = row.querySelector('.reactant-selector');
-                return selector.value ? { chemical_id: parseInt(selector.value), quantity: 1.0 } : null;
-            }).filter(Boolean);
-
-            if (reactants.length === 0) {
-                return showNotification('Please select at least one reactant.', 'error');
-            }
-
-            const catalyst_id = choicesInstances['catalyst-selector'].getValue(true) || null;
-            
-            try {
-                renderResults('Running Reaction...', { status: 'Processing...' });
-                const result = await api.runReaction({ reactants, catalyst_id, environment: "Earth (Normal)" });
-                renderReactionResults(result);
-                showNotification('Reaction complete!');
-            } catch (error) {
-                renderResults('Reaction Failed', { error: error.message });
-                showNotification(error.message, 'error');
-            }
-        };
-
-        const handleDebugClear = async (type) => {
-            if (!confirm(`Are you sure you want to delete ALL ${type}? This action cannot be undone.`)) return;
-            try {
-                const result = (type === 'chemicals') ? await api.clearAllChemicals() : await api.clearAllReactions();
-                renderResults(`Cleared All ${type}`, result);
-                showNotification(result.message);
-                await init(); // Refresh data
-            } catch (error) {
-                renderResults(`Failed to clear ${type}`, { error: error.message });
-                showNotification(error.message, 'error');
-            }
-        };
-
-        const handleRequestDelete = async () => {
-            const chemicalId = choicesInstances['delete-chemical-selector'].getValue(true);
-            const reactionId = choicesInstances['delete-reaction-selector'].getValue(true);
-            const reason = ui.deleteReason.value;
-
-            if ((!chemicalId && !reactionId) || (chemicalId && reactionId)) {
-                return showNotification('Please select exactly one chemical OR one reaction to delete.', 'error');
-            }
-            if (!reason) {
-                return showNotification('A reason for deletion is required.', 'error');
-            }
-
-            const type = chemicalId ? 'chemicals' : 'reactions';
-            const id = chemicalId || reactionId;
-
-            try {
-                const result = await api.requestDelete(type, id, reason);
-                renderResults('Deletion Request Submitted', result);
-                showNotification(result.message);
-                ui.deleteReason.value = '';
-                choicesInstances['delete-chemical-selector'].setChoiceByValue('');
-                choicesInstances['delete-reaction-selector'].setChoiceByValue('');
-            } catch (error) {
-                renderResults('Deletion Request Failed', { error: error.message });
-                showNotification(error.message, 'error');
-            }
-        };
-
-        // --- EVENT LISTENERS ---
-        ui.loginBtn.addEventListener('click', handleLogin);
-        ui.passwordInput.addEventListener('keyup', e => e.key === 'Enter' && handleLogin());
-        ui.addReactantBtn.addEventListener('click', addReactantSelector);
-        ui.runReactionBtn.addEventListener('click', handleRunReaction);
-        // Debug listeners
-        ui.clearChemicalsBtn.addEventListener('click', () => handleDebugClear('chemicals'));
-        ui.clearReactionsBtn.addEventListener('click', () => handleDebugClear('reactions'));
-        ui.requestDeleteBtn.addEventListener('click', handleRequestDelete);
+        App.init();
     });
 </script>
 
