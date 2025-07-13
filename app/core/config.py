@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS settings
-    # Add your Unity client domains
+    # Add your SvelteKit frontend domains
     allowed_origins: list[str] = ["*"]
 
     # PubChem API settings

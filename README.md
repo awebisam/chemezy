@@ -4,7 +4,7 @@
 
 So, you've stumbled upon the secret sauce, the digital DNA, the very **source code of reality** for the Chemezy universe. Yes, that's right. While your players are busy oohing and aahing over pretty explosions and bubbling concoctions in their fancy 3D lab, *this* is where the magic (and the science, mostly the science) actually happens.
 
-Think of me as the grumpy, highly intelligent, and slightly overworked librarian of chemical reactions. The Unity client? Oh, that's just the flashy tour guide. It asks me, "Hey, what happens if I mix water and salt?" And I, in my infinite wisdom (and with a little help from some very smart AI), tell it *exactly* what happens. No, I don't draw the pretty pictures; I just provide the immutable, deterministic truth. Every. Single. Time.
+Think of me as the grumpy, highly intelligent, and slightly overworked librarian of chemical reactions. The SvelteKit frontend? Oh, that's just the flashy tour guide. It asks me, "Hey, what happens if I mix water and salt?" And I, in my infinite wisdom (and with a little help from some very smart AI), tell it *exactly* what happens. No, I don't draw the pretty pictures; I just provide the immutable, deterministic truth. Every. Single. Time.
 
 ## The Player's Command: My Daily To-Do List
 
@@ -78,7 +78,7 @@ That `is_world_first` flag? That's my pride and joy! It means a player has done 
 
 ## The Bridge to the Visual World: Making Data Pretty
 
-Once I've done all my hard work, I send my pristine JSON packet back to the 3D Unity client. The client then takes my cold, hard data and turns it into a dazzling display of visual and auditory awesomeness. It sees "fire" and makes a fire. It sees "fizz" and makes a fizzing sound. It sees "rapid_temperature_increase" and applies a shimmering heat-haze shader to the air above the beaker. It's like a translator, but for explosions.
+Once I've done all my hard work, I send my pristine JSON packet back to the SvelteKit frontend. The client then takes my cold, hard data and turns it into a dazzling display of visual and auditory awesomeness. It sees "fire" and makes a fire. It sees "fizz" and makes a fizzing sound. It sees "rapid_temperature_increase" and applies a shimmering heat-haze shader to the air above the beaker. It's like a translator, but for explosions.
 
 ## Quick Start (Because Who Reads Long Docs Anyway?)
 
