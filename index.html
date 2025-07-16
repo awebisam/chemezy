@@ -387,34 +387,60 @@
                             <p class="text-yellow-300 text-sm">You're the first to create this reaction!</p>
                         </div>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-6">
+                            <!-- Reaction Overview -->
                             <div>
-                                <h3 class="font-semibold text-gray-300 mb-2">Explanation</h3>
-                                <p class="text-white bg-slate-800/50 p-4 rounded-lg" x-text="lastReaction.explanation"></p>
+                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Reaction Overview</h3>
+                                <div class="text-white bg-slate-800/50 p-4 rounded-lg prose prose-invert">
+                                    <p>
+                                        In the virtual beaker, you combined 
+                                        <template x-for="(reactant, index) in lastReaction.reactants">
+                                            <span>
+                                                <strong x-text="reactant.molecular_formula"></strong>
+                                                <span x-show="index < lastReaction.reactants.length - 1" x-text="index === lastReaction.reactants.length - 2 ? ' and ' : ', '"></span>
+                                            </span>
+                                        </template>. 
+                                        This initiated a chemical reaction, resulting in the formation of new products. Here's what happened:
+                                    </p>
+                                    <p x-text="lastReaction.explanation"></p>
+                                </div>
                             </div>
-                            
+
+                            <!-- Products -->
                             <div>
-                                <h3 class="font-semibold text-gray-300 mb-2">Products</h3>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Products</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <template x-for="product in lastReaction.products" :key="product.chemical_id">
-                                        <div class="chemical-card p-3 rounded-lg text-center">
-                                            <p class="font-bold text-white" x-text="product.molecular_formula"></p>
-                                            <p class="text-sm text-gray-400">Qty: <span x-text="product.quantity.toFixed(2)"></span></p>
+                                        <div class="chemical-card p-4 rounded-lg flex items-center space-x-4">
+                                            <div class="element-symbol w-16 h-16">
+                                                <span class="symbol text-xl" x-text="product.molecular_formula"></span>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-white text-lg" x-text="product.molecular_formula"></p>
+                                                <p class="text-sm text-gray-400">Quantity: <span x-text="product.quantity.toFixed(2)"></span> moles</p>
+                                                <p class="text-sm text-gray-400" x-text="product.common_name || 'No common name'"></p>
+                                            </div>
                                         </div>
                                     </template>
                                 </div>
                             </div>
                             
+                            <!-- Visual Effects -->
                             <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
-                                <h3 class="font-semibold text-gray-300 mb-2">Visual Effects</h3>
-                                <div class="flex flex-wrap gap-2">
-                                    <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
-                                        <span class="px-3 py-1 rounded-full text-sm"
-                                              :style="`background-color: ${effect.color}20; color: ${effect.color}; border: 1px solid ${effect.color}50;`">
-                                            <span x-text="effect.effect_type"></span> • 
-                                            <span x-text="`Intensity: ${effect.intensity}`"></span>
-                                        </span>
-                                    </template>
+                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Visual Effects</h3>
+                                <div class="bg-slate-800/50 p-4 rounded-lg">
+                                    <p class="text-gray-300 mb-3">The reaction produced the following visual phenomena:</p>
+                                    <div class="flex flex-wrap gap-3">
+                                        <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-5 h-5 rounded-full border-2" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
+                                                <div>
+                                                    <span class="font-semibold text-white" x-text="effect.effect_type"></span>
+                                                    <span class="text-gray-400 text-sm">(Intensity: <span x-text="effect.intensity"></span>)</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -588,6 +614,10 @@
         🏆 WORLD FIRST! 🏆
     </div>
 
+    <footer class="text-center py-8 text-gray-500 text-sm">
+        An experiment by <a href="https://awebisam.com" target="_blank" class="text-blue-400 hover:text-blue-300">Awebisam</a>
+    </footer>
+
     <script>
         function chemezyApp() {
             return {
@@ -675,7 +705,18 @@
                         });
                         
                         if (!response.ok) {
-                            const error = await response.json();
+                            let error = { detail: `HTTP error! status: ${response.status}` };
+                            try {
+                                error = await response.json();
+                            } catch (e) {
+                                // The response was not valid JSON, do nothing
+                            }
+
+                            if (response.status === 401 || (error.detail && typeof error.detail === 'string' && error.detail.includes('Could not validate credentials'))) {
+                                this.logout(true); // Pass true for session expiration
+                                throw new Error('Session expired. Please log in again.');
+                            }
+                            
                             throw new Error(error.detail || 'API request failed');
                         }
                         
@@ -720,7 +761,7 @@
                     }
                 },
                 
-                logout() {
+                logout(sessionExpired = false) {
                     this.isAuthenticated = false;
                     this.authToken = null;
                     this.username = '';
@@ -728,7 +769,12 @@
                     localStorage.removeItem('chemezy_username');
                     this.loginForm.username = '';
                     this.loginForm.password = '';
-                    this.showNotification('Logged Out', 'info', 'See you next time!');
+
+                    if (sessionExpired) {
+                        this.showNotification('Session Expired', 'error', 'Your session has expired. Please log in again.');
+                    } else {
+                        this.showNotification('Logged Out', 'info', 'See you next time!');
+                    }
                 },
                 
                 async loadInitialData() {
@@ -822,6 +868,10 @@
                         });
                         
                         this.lastReaction = result;
+
+                        // Refetch chemicals to include any new products
+                        const chemicalsData = await this.apiRequest('/chemicals/');
+                        this.chemicals = chemicalsData.results || [];
                         
                         if (result.is_world_first) {
                             this.showWorldFirstDiscovery();
