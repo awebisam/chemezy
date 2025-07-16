@@ -18,9 +18,12 @@ class GenerateChemicalProperties(dspy.Signature):
     __doc__ = __doc__.strip()
 
     molecular_formula: str = dspy.InputField(
-        desc="The molecular formula of the chemical (e.g., 'H2O')."
+        desc="The molecular formula of the chemical (e.g., 'NAHSO4' for sodium bisulfate)."
     )
 
+    normalized_formula: str = dspy.OutputField(
+        desc="The normalized molecular formula, e.g., 'NaHSO4' for sodium bisulfate."
+    )
     common_name: str = dspy.OutputField(
         desc="The common name of the chemical, e.g., 'Water'."
     )

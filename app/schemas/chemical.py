@@ -11,6 +11,8 @@ class ChemicalCreate(BaseModel):
 
 
 class ChemicalGenerated(BaseModel):
+    molecular_formula: str = Field(
+        ..., description="The molecular formula of the chemical, e.g., 'NaHSO4' for sodium bisulfate.")
     common_name: str = Field(...,
                              description="The common name of the chemical, e.g., 'Water'.")
     state_of_matter: StateOfMatter = Field(

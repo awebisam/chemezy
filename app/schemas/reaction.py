@@ -20,7 +20,7 @@ class ProductOutput(BaseModel):
     is_soluble: bool = Field(..., description="Whether the product is soluble in the reaction environment")
 
 class ProductOutputDSPy(BaseModel):
-    molecular_formula: str
+    molecular_formula: str = Field(..., description="The normalized formula of the product i.e proper capitalization and lowercase. like 'NaHSO4' for sodium bisulfate.")
     quantity: float
     is_soluble: bool = Field(..., description="Whether the product is soluble in the reaction environment")
 

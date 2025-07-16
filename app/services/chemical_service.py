@@ -85,6 +85,7 @@ class ChemicalService:
                 molecular_formula=chemical_in.molecular_formula)
 
             generated_data = ChemicalGenerated(
+                molecular_formula=prediction.normalized_formula,
                 common_name=prediction.common_name,
                 state_of_matter=prediction.state_of_matter,
                 color=prediction.color,
@@ -98,7 +99,6 @@ class ChemicalService:
                 "Failed to generate properties from LLM.") from e
 
         db_chemical = Chemical(
-            molecular_formula=chemical_in.molecular_formula,
             **generated_data.model_dump()
         )
 
