@@ -261,21 +261,9 @@ class ReactionService:
         """Processes the prediction, creating new chemicals if necessary."""
         processed_products = []
         for p in prediction_dspy_output.products:
-            chemical = await self.chemical_service.get_by_molecular_formula(
-                p.molecular_formula
+            chemical = await self.chemical_service.get_or_create_chemical(
+                ChemicalCreate(molecular_formula=p.molecular_formula, context=p.common_name)
             )
-            if not chemical:
-                try:
-                    chemical = await self.chemical_service.create_chemical(ChemicalCreate(molecular_formula=p.molecular_formula))
-                except ValueError as e:
-                    # Handle case where chemical was created by another process
-                    if "already exists" in str(e):
-                        chemical = await self.chemical_service.get_by_molecular_formula(p.molecular_formula)
-                        if not chemical:
-                            logger.error(f"Chemical {p.molecular_formula} should exist but couldn't be found")
-                            raise
-                    else:
-                        raise
             
             processed_products.append(
                 ProductOutput(

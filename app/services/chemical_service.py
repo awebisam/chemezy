@@ -48,10 +48,18 @@ class ChemicalService:
         """Get a chemical by its ID."""
         return self.db.get(Chemical, chemical_id)
 
-    async def get_by_molecular_formula(self, molecular_formula: str) -> Optional[Chemical]:
-        """Get a chemical by its molecular formula."""
+    async def get_by_molecular_formula(self, molecular_formula: str) -> List[Chemical]:
+        """Get chemicals by their molecular formula, case-insensitively."""
         statement = select(Chemical).where(
-            Chemical.molecular_formula == molecular_formula)
+            Chemical.molecular_formula.ilike(molecular_formula))
+        return self.db.exec(statement).all()
+
+    async def get_by_formula_and_name(self, molecular_formula: str, common_name: str) -> Optional[Chemical]:
+        """Get a chemical by its molecular formula and common name, case-insensitively."""
+        statement = select(Chemical).where(
+            Chemical.molecular_formula.ilike(molecular_formula),
+            Chemical.common_name.ilike(common_name)
+        )
         return self.db.exec(statement).first()
 
     async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Chemical], int]:
@@ -72,21 +80,17 @@ class ChemicalService:
             self.db.commit()
         return chemical
 
-    async def create_chemical(self, chemical_in: ChemicalCreate) -> Chemical:
-        """Create a new chemical."""
-        existing_chemical = await self.get_by_molecular_formula(chemical_in.molecular_formula)
-        if existing_chemical:
-            raise ValueError(
-                f"Chemical with formula {chemical_in.molecular_formula} already exists.")
-
+    async def get_or_create_chemical(self, chemical_in: ChemicalCreate) -> Chemical:
+        """Get or create a new chemical."""
         if not self.property_generator:
             raise RuntimeError(
                 "Chemical property generator is not configured. Cannot create new chemicals.")
 
         try:
             # Step 1: Retrieve data from PubChem
-            pubchem_data = await self.pubchem_service.get_compound_data(chemical_in.molecular_formula)
-            
+            pubchem_data = await self.pubchem_service.get_compound_data(
+                chemical_in.molecular_formula)
+
             # Step 2: Prepare context for LLM
             if pubchem_data:
                 pubchem_context = json.dumps(pubchem_data)
@@ -99,7 +103,7 @@ class ChemicalService:
                     "h_bond_acceptors": 0,
                     "source": "Not found in PubChem"
                 })
-            
+
             # Step 3: Generate properties using RAG approach
             context = chemical_in.context or "general compound"
             prediction = self.property_generator(
@@ -109,8 +113,8 @@ class ChemicalService:
             )
 
             generated_data = ChemicalGenerated(
-                molecular_formula=prediction.normalized_formula,
-                common_name=prediction.common_name,
+                molecular_formula=prediction.normalized_formula.strip(),
+                common_name=prediction.common_name.strip(),
                 state_of_matter=prediction.state_of_matter,
                 color=prediction.color,
                 density=prediction.density,
@@ -121,6 +125,12 @@ class ChemicalService:
                 f"ERROR: Failed to generate chemical properties for {chemical_in.molecular_formula}: {e}")
             raise RuntimeError(
                 "Failed to generate properties from LLM.") from e
+
+        existing_chemical = await self.get_by_formula_and_name(
+            generated_data.molecular_formula, generated_data.common_name
+        )
+        if existing_chemical:
+            return existing_chemical
 
         db_chemical = Chemical(
             **generated_data.model_dump()
@@ -134,14 +144,18 @@ class ChemicalService:
         except Exception as e:
             # Handle database constraint violations (race condition)
             self.db.rollback()
-            if "UNIQUE constraint failed" in str(e) and "molecular_formula" in str(e):
+            if "UNIQUE constraint failed" in str(e):
                 # Another process created the chemical, try to get it
-                existing_chemical = await self.get_by_molecular_formula(generated_data.molecular_formula)
+                existing_chemical = await self.get_by_formula_and_name(
+                    generated_data.molecular_formula, generated_data.common_name
+                )
                 if existing_chemical:
                     return existing_chemical
                 else:
+                    # This case is unlikely but good to handle
                     raise ValueError(
-                        f"Chemical with formula {generated_data.molecular_formula} should exist but couldn't be found")
+                        f"Chemical with formula {generated_data.molecular_formula} and name '{generated_data.common_name}' should exist but couldn't be found after a race condition."
+                    )
             else:
                 raise
 

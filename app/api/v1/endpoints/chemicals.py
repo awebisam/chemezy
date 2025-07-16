@@ -29,7 +29,7 @@ async def create_chemical(
     This will trigger a call to an LLM to generate the chemical's properties.
     """
     try:
-        chemical = await service.create_chemical(chemical_in=chemical_in)
+        chemical = await service.get_or_create_chemical(chemical_in=chemical_in)
         return chemical
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
