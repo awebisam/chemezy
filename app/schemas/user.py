@@ -22,6 +22,7 @@ class UserResponseSchema(BaseModel):
     username: str
     email: str
     is_active: bool
+    is_admin: bool
     created_at: datetime
 
     class Config:

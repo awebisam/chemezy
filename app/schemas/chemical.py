@@ -8,6 +8,8 @@ from app.models.chemical import StateOfMatter
 class ChemicalCreate(BaseModel):
     molecular_formula: str = Field(
         ..., description="The molecular formula of the chemical, e.g., 'H2O'.")
+    context: Optional[str] = Field(
+        None, description="Optional context or name hint to help identify the specific compound, e.g., 'vitamin C', 'table salt'.")
 
 
 class ChemicalGenerated(BaseModel):

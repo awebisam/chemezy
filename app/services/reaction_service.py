@@ -76,9 +76,19 @@ class ReactionService:
         ).first()
 
         if cached_reaction:
-            # Process cached result
+            # Process cached result - convert cached products to ProductOutput objects
+            cached_products = []
+            for product_dict in cached_reaction.products:
+                cached_products.append(ProductOutput(
+                    chemical_id=product_dict.get("chemical_id"),
+                    molecular_formula=product_dict.get("molecular_formula", ""),
+                    common_name=product_dict.get("common_name", "Unknown"),
+                    quantity=product_dict.get("quantity", 1.0),
+                    is_soluble=product_dict.get("is_soluble", True)
+                ))
+            
             prediction = ReactionPrediction(
-                products=cached_reaction.products,
+                products=cached_products,
                 effects=cached_reaction.effects,
                 state_of_product=cached_reaction.state_of_product,
                 explanation=cached_reaction.explanation,
@@ -255,12 +265,23 @@ class ReactionService:
                 p.molecular_formula
             )
             if not chemical:
-                chemical = await self.chemical_service.create_chemical(ChemicalCreate(molecular_formula=p.molecular_formula))
+                try:
+                    chemical = await self.chemical_service.create_chemical(ChemicalCreate(molecular_formula=p.molecular_formula))
+                except ValueError as e:
+                    # Handle case where chemical was created by another process
+                    if "already exists" in str(e):
+                        chemical = await self.chemical_service.get_by_molecular_formula(p.molecular_formula)
+                        if not chemical:
+                            logger.error(f"Chemical {p.molecular_formula} should exist but couldn't be found")
+                            raise
+                    else:
+                        raise
             
             processed_products.append(
                 ProductOutput(
                     chemical_id=chemical.id,
                     molecular_formula=p.molecular_formula,
+                    common_name=p.common_name,
                     quantity=p.quantity,
                     is_soluble=p.is_soluble
                 )
@@ -278,6 +299,7 @@ class ReactionService:
             ProductOutput(
                 chemical_id=r.id, 
                 molecular_formula=r.molecular_formula, 
+                common_name=r.common_name,
                 quantity=1,
                 is_soluble=True  # Default to soluble for fallback
             ) for r in reactants

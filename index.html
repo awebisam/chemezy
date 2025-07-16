@@ -160,6 +160,7 @@
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
 
         .element-symbol .number {
@@ -169,6 +170,39 @@
 
         .element-symbol .symbol {
             font-size: 1.5rem;
+            word-break: break-all;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 100%;
+        }
+        
+        .element-symbol.small .symbol {
+            font-size: 0.8rem;
+        }
+        
+        .element-symbol.tiny .symbol {
+            font-size: 0.6rem;
+        }
+        
+        /* Environment-specific effects */
+        .environment-vacuum {
+            background: radial-gradient(circle at center, rgba(30, 27, 75, 0.3) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+        
+        .environment-oxygen {
+            background: radial-gradient(circle at center, rgba(14, 165, 233, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+        
+        .environment-acidic {
+            background: radial-gradient(circle at center, rgba(220, 38, 38, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+        
+        .environment-basic {
+            background: radial-gradient(circle at center, rgba(22, 163, 74, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+        
+        .environment-inert {
+            background: radial-gradient(circle at center, rgba(107, 114, 128, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
         }
     </style>
 </head>
@@ -256,6 +290,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                         </svg>
                     </button>
+                    
+                    <!-- Admin Debug Button -->
+                    <button x-show="isAdmin" @click="showDebugModal = true" 
+                            class="text-red-400 hover:text-red-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                        </svg>
+                    </button>
                     <div class="text-right">
                         <p class="text-sm text-gray-400">Scientist</p>
                         <p class="font-semibold text-white" x-text="username"></p>
@@ -281,15 +323,21 @@
                             </svg>
                             Quick Add Chemical
                         </h2>
-                        <div class="flex space-x-2">
-                            <input type="text" x-model="newChemical" 
+                        <div class="space-y-3">
+                            <div class="flex space-x-2">
+                                <input type="text" x-model="newChemical" 
+                                       @keyup.enter="addChemical"
+                                       placeholder="Enter molecular formula (e.g., H2O, NaCl, C6H12O6)"
+                                       class="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none">
+                                <button @click="addChemical" 
+                                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all">
+                                    Add to Lab
+                                </button>
+                            </div>
+                            <input type="text" x-model="chemicalContext" 
                                    @keyup.enter="addChemical"
-                                   placeholder="Enter molecular formula (e.g., H2O, NaCl, C6H12O6)"
-                                   class="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none">
-                            <button @click="addChemical" 
-                                    class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all">
-                                Add to Lab
-                            </button>
+                                   placeholder="Optional: Add context to help identify the right compound (e.g., 'vitamin C', 'table salt')"
+                                   class="w-full px-4 py-2 bg-slate-800/30 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none text-sm">
                         </div>
                     </div>
 
@@ -302,25 +350,92 @@
                             Virtual Lab Bench
                         </h2>
                         
+                        <!-- Environment Selection Tabs -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">Select Environment</label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <template x-for="environment in environments" :key="environment.name">
+                                    <button @click="selectedEnvironment = environment.name" 
+                                            class="p-3 rounded-lg border-2 transition-all duration-300 text-left relative overflow-hidden"
+                                            :class="{
+                                                'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/25': selectedEnvironment === environment.name,
+                                                'border-slate-600 bg-slate-800/30 hover:border-slate-500': selectedEnvironment !== environment.name
+                                            }">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-lg" x-text="environment.icon"></span>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-white text-sm truncate" x-text="environment.name"></p>
+                                                <p class="text-xs text-gray-400 truncate" x-text="environment.description"></p>
+                                            </div>
+                                        </div>
+                                        <div x-show="selectedEnvironment === environment.name" 
+                                             class="absolute top-1 right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        
                         <!-- Reaction Setup -->
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-300 mb-3">Drag chemicals here to start reaction</label>
                             <div @drop="handleDrop($event)" 
                                  @dragover.prevent
                                  @dragenter.prevent
-                                 class="min-h-[200px] bg-slate-800/30 border-2 border-dashed border-slate-600 rounded-lg p-4 transition-all"
-                                 :class="{'border-blue-500 bg-blue-500/10': isDragging}">
+                                 class="min-h-[200px] border-2 border-dashed rounded-lg p-4 transition-all duration-300"
+                                 :class="{
+                                     'border-blue-500 bg-blue-500/10': isDragging,
+                                     [currentEnvironment.ambientColor]: !isDragging,
+                                     [currentEnvironment.borderColor]: !isDragging
+                                 }">
+                                
+                                <!-- Environment Indicator -->
+                                <div class="text-center mb-4" x-show="reactants.length === 0">
+                                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black/20 border border-white/10">
+                                        <span x-text="currentEnvironment.icon"></span>
+                                        <span class="text-sm text-gray-300" x-text="currentEnvironment.name"></span>
+                                    </div>
+                                </div>
                                 
                                 <!-- Beaker Animation -->
                                 <div class="beaker mx-auto" x-show="reactants.length > 0">
                                     <svg viewBox="0 0 200 250" class="w-full h-full">
+                                        <defs>
+                                            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                                <feMerge>
+                                                    <feMergeNode in="coloredBlur"/>
+                                                    <feMergeNode in="SourceGraphic"/>
+                                                </feMerge>
+                                            </filter>
+                                        </defs>
                                         <path d="M50 20 L50 180 Q50 220 90 220 L110 220 Q150 220 150 180 L150 20" 
-                                              stroke="#3b82f6" stroke-width="3" fill="none"/>
+                                              stroke="#3b82f6" stroke-width="3" fill="none"
+                                              :filter="selectedEnvironment === 'Pure Oxygen' ? 'url(#glow)' : ''"/>
                                         <rect x="40" y="10" width="120" height="20" rx="10" fill="#3b82f6"/>
                                     </svg>
-                                    <div class="beaker-liquid" :style="`height: ${reactants.length * 30}%`">
+                                    <div class="beaker-liquid transition-all duration-500" 
+                                         :style="`height: ${reactants.length * 30}%; background: ${currentEnvironment.beakerColor}`">
                                         <template x-for="i in reactants.length" :key="i">
                                             <div class="bubble" :style="`left: ${20 + i * 30}%; animation-delay: ${i * 0.5}s;`"></div>
+                                        </template>
+                                        <!-- Environment-specific particles -->
+                                        <template x-if="selectedEnvironment === 'Vacuum'">
+                                            <div class="absolute inset-0 pointer-events-none">
+                                                <div class="absolute top-1/2 left-1/2 w-1 h-1 bg-purple-400 rounded-full animate-ping" style="animation-delay: 0.5s;"></div>
+                                                <div class="absolute top-1/3 left-1/3 w-1 h-1 bg-indigo-400 rounded-full animate-ping" style="animation-delay: 1s;"></div>
+                                            </div>
+                                        </template>
+                                        <template x-if="selectedEnvironment === 'Acidic Environment'">
+                                            <div class="absolute inset-0 pointer-events-none">
+                                                <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-red-400 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+                                                <div class="absolute top-3/4 left-3/4 w-2 h-2 bg-orange-400 rounded-full animate-pulse" style="animation-delay: 0.8s;"></div>
+                                            </div>
+                                        </template>
+                                        <template x-if="selectedEnvironment === 'Basic Environment'">
+                                            <div class="absolute inset-0 pointer-events-none">
+                                                <div class="absolute top-1/4 left-3/4 w-2 h-2 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+                                                <div class="absolute top-3/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" style="animation-delay: 0.9s;"></div>
+                                            </div>
                                         </template>
                                     </div>
                                 </div>
@@ -373,6 +488,44 @@
                         </button>
                     </div>
 
+                    <!-- Lab Bench Products -->
+                    <div x-show="benchProducts.length > 0" class="glass rounded-xl p-6 slide-up">
+                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                            Lab Bench Products
+                        </h2>
+                        <p class="text-gray-400 text-sm mb-4">Products from your reactions are stored here. You can use them in future experiments!</p>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <template x-for="product in benchProducts" :key="product.chemical_id">
+                                <div draggable="true" 
+                                     @dragstart="startDrag($event, product)"
+                                     @dragend="endDrag"
+                                     class="chemical-card p-3 rounded-lg cursor-move relative">
+                                    <div class="text-center">
+                                        <div class="element-symbol w-12 h-12 mx-auto mb-2" 
+                                             :class="{
+                                                 'small': product.molecular_formula.length > 3 && product.molecular_formula.length <= 6,
+                                                 'tiny': product.molecular_formula.length > 6
+                                             }">
+                                            <span class="symbol text-sm" x-text="product.molecular_formula"></span>
+                                        </div>
+                                        <p class="font-semibold text-white text-sm" x-text="product.molecular_formula"></p>
+                                        <p class="text-xs text-gray-400" x-text="product.common_name || 'Product'"></p>
+                                        <p class="text-xs text-green-400 mt-1" x-text="`${product.quantity.toFixed(2)} moles`"></p>
+                                    </div>
+                                    <button @click="removeFromBench(product.chemical_id)" 
+                                            class="absolute top-1 right-1 text-red-400 hover:text-red-300 opacity-70 hover:opacity-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     <!-- Results Panel -->
                     <div x-show="lastReaction" x-cloak class="glass rounded-xl p-6 slide-up">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
@@ -382,65 +535,205 @@
                             Reaction Results
                         </h2>
                         
-                        <div x-show="lastReaction.is_world_first" class="mb-4 p-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
-                            <p class="text-yellow-400 font-bold text-lg">🏆 World-First Discovery!</p>
-                            <p class="text-yellow-300 text-sm">You're the first to create this reaction!</p>
-                        </div>
-                        
-                        <div class="space-y-6">
-                            <!-- Reaction Overview -->
-                            <div>
-                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Reaction Overview</h3>
-                                <div class="text-white bg-slate-800/50 p-4 rounded-lg prose prose-invert">
-                                    <p>
-                                        In the virtual beaker, you combined 
-                                        <template x-for="(reactant, index) in lastReaction.reactants">
-                                            <span>
-                                                <strong x-text="reactant.molecular_formula"></strong>
-                                                <span x-show="index < lastReaction.reactants.length - 1" x-text="index === lastReaction.reactants.length - 2 ? ' and ' : ', '"></span>
-                                            </span>
-                                        </template>. 
-                                        This initiated a chemical reaction, resulting in the formation of new products. Here's what happened:
-                                    </p>
-                                    <p x-text="lastReaction.explanation"></p>
+                        <div x-show="lastReaction.is_world_first" class="mb-6 p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-3xl">🏆</div>
+                                <div>
+                                    <p class="text-yellow-400 font-bold text-lg">World-First Discovery!</p>
+                                    <p class="text-yellow-300 text-sm">You're the first to create this reaction!</p>
                                 </div>
                             </div>
-
-                            <!-- Products -->
-                            <div>
-                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Products</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <template x-for="product in lastReaction.products" :key="product.chemical_id">
-                                        <div class="chemical-card p-4 rounded-lg flex items-center space-x-4">
-                                            <div class="element-symbol w-16 h-16">
-                                                <span class="symbol text-xl" x-text="product.molecular_formula"></span>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-white text-lg" x-text="product.molecular_formula"></p>
-                                                <p class="text-sm text-gray-400">Quantity: <span x-text="product.quantity.toFixed(2)"></span> moles</p>
-                                                <p class="text-sm text-gray-400" x-text="product.common_name || 'No common name'"></p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Left Column: Reaction Overview -->
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Reaction Overview
+                                    </h3>
+                                    <div class="text-white bg-slate-800/50 p-4 rounded-lg">
+                                        <div class="mb-3">
+                                            <p class="text-sm text-gray-400 mb-2">Reactants:</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="(reactant, index) in lastReaction.reactants">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                        <span x-text="reactant.molecular_formula"></span>
+                                                    </span>
+                                                </template>
                                             </div>
                                         </div>
-                                    </template>
+                                        <div class="mb-3">
+                                            <p class="text-sm text-gray-400 mb-2">Environment:</p>
+                                            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black/20 border border-white/10">
+                                                <span x-text="lastReaction.environmentConfig?.icon || '🌍'"></span>
+                                                <span class="text-sm text-gray-300" x-text="lastReaction.environment || 'Earth (Normal)'"></span>
+                                            </div>
+                                        </div>
+                                        <div class="text-sm text-gray-300 leading-relaxed" x-text="lastReaction.explanation"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visual Effects -->
+                                <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
+                                    <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h4a1 1 0 011 1v2m-6 0h8m-8 0a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2m-8 0V4a1 1 0 011-1h4a1 1 0 011 1v2M9 12l2 2 4-4"/>
+                                        </svg>
+                                        Visual Effects
+                                    </h3>
+                                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                                        <div class="space-y-3">
+                                            <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
+                                                <div class="p-3 rounded-lg bg-slate-700/50 border border-slate-600/50">
+                                                    <!-- Gas Production Effect -->
+                                                    <div x-show="effect.effect_type === 'gas_production'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Gas Production</p>
+                                                                <p class="text-xs text-gray-400" x-text="effect.gas_type"></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                                            <div class="text-gray-400">Intensity: <span class="text-white" x-text="(effect.intensity * 100).toFixed(0) + '%'"></span></div>
+                                                            <div class="text-gray-400">Duration: <span class="text-white" x-text="effect.duration + 's'"></span></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Light Emission Effect -->
+                                                    <div x-show="effect.effect_type === 'light_emission'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80; box-shadow: 0 0 10px ${effect.color}40`"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Light Emission</p>
+                                                                <p class="text-xs text-gray-400">Glowing light effect</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                                            <div class="text-gray-400">Intensity: <span class="text-white" x-text="(effect.intensity * 100).toFixed(0) + '%'"></span></div>
+                                                            <div class="text-gray-400">Radius: <span class="text-white" x-text="effect.radius + 'm'"></span></div>
+                                                            <div class="text-gray-400">Duration: <span class="text-white" x-text="effect.duration + 's'"></span></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Volume Change Effect -->
+                                                    <div x-show="effect.effect_type === 'volume_change'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-blue-500 border-blue-400"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Volume Change</p>
+                                                                <p class="text-xs text-gray-400">Solution volume altered</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-gray-400">Factor: <span class="text-white" x-text="effect.factor + 'x'"></span></div>
+                                                    </div>
+                                                    
+                                                    <!-- Temperature Change Effect -->
+                                                    <div x-show="effect.effect_type === 'temperature_change'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :class="effect.delta_celsius > 0 ? 'bg-red-500 border-red-400' : 'bg-blue-500 border-blue-400'"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Temperature Change</p>
+                                                                <p class="text-xs text-gray-400" x-text="effect.delta_celsius > 0 ? 'Heating' : 'Cooling'"></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-gray-400">Change: <span class="text-white" x-text="(effect.delta_celsius > 0 ? '+' : '') + effect.delta_celsius + '°C'"></span></div>
+                                                    </div>
+                                                    
+                                                    <!-- Foam Production Effect -->
+                                                    <div x-show="effect.effect_type === 'foam_production'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Foam Production</p>
+                                                                <p class="text-xs text-gray-400" x-text="effect.bubble_size + ' bubbles'"></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                                            <div class="text-gray-400">Density: <span class="text-white" x-text="effect.density"></span></div>
+                                                            <div class="text-gray-400">Stability: <span class="text-white" x-text="effect.stability + 's'"></span></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- State Change Effect -->
+                                                    <div x-show="effect.effect_type === 'state_change'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-purple-500 border-purple-400"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">State Change</p>
+                                                                <p class="text-xs text-gray-400">Matter state transition</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-gray-400">Final State: <span class="text-white capitalize" x-text="effect.final_state"></span></div>
+                                                    </div>
+                                                    
+                                                    <!-- Texture Change Effect -->
+                                                    <div x-show="effect.effect_type === 'texture_change'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Texture Change</p>
+                                                                <p class="text-xs text-gray-400" x-text="effect.texture_type"></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-gray-400">Viscosity: <span class="text-white" x-text="(effect.viscosity * 100).toFixed(0) + '%'"></span></div>
+                                                    </div>
+                                                    
+                                                    <!-- Spill Effect -->
+                                                    <div x-show="effect.effect_type === 'spill'">
+                                                        <div class="flex items-center space-x-3 mb-2">
+                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-amber-500 border-amber-400"></div>
+                                                            <div>
+                                                                <p class="font-semibold text-white text-sm">Spill</p>
+                                                                <p class="text-xs text-gray-400">Solution overflow</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                                            <div class="text-gray-400">Amount: <span class="text-white" x-text="(effect.amount_percentage * 100).toFixed(0) + '%'"></span></div>
+                                                            <div class="text-gray-400">Spread: <span class="text-white" x-text="effect.spread_radius + 'm'"></span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Visual Effects -->
-                            <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
-                                <h3 class="font-semibold text-gray-300 mb-2 text-lg">Visual Effects</h3>
-                                <div class="bg-slate-800/50 p-4 rounded-lg">
-                                    <p class="text-gray-300 mb-3">The reaction produced the following visual phenomena:</p>
-                                    <div class="flex flex-wrap gap-3">
-                                        <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
-                                            <div class="flex items-center space-x-2">
-                                                <div class="w-5 h-5 rounded-full border-2" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
-                                                <div>
-                                                    <span class="font-semibold text-white" x-text="effect.effect_type"></span>
-                                                    <span class="text-gray-400 text-sm">(Intensity: <span x-text="effect.intensity"></span>)</span>
+                            <!-- Right Column: Products -->
+                            <div>
+                                <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                    </svg>
+                                    Products Formed
+                                </h3>
+                                <div class="space-y-3">
+                                    <template x-for="product in lastReaction.products" :key="product.chemical_id">
+                                        <div class="chemical-card p-4 rounded-lg">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="element-symbol w-14 h-14" 
+                                                     :class="{
+                                                         'small': product.molecular_formula.length > 3 && product.molecular_formula.length <= 6,
+                                                         'tiny': product.molecular_formula.length > 6
+                                                     }">
+                                                    <span class="symbol text-lg" x-text="product.molecular_formula"></span>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="font-bold text-white text-lg" x-text="product.molecular_formula"></p>
+                                                    <p class="text-sm text-gray-400" x-text="product.common_name || 'No common name'"></p>
+                                                    <div class="flex items-center space-x-4 mt-2">
+                                                        <span class="text-sm text-green-400 bg-green-500/20 px-2 py-1 rounded" x-text="`${product.quantity.toFixed(2)} moles`"></span>
+                                                        <span class="text-xs text-gray-500">Added to bench</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </template>
-                                    </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -473,7 +766,12 @@
                                             <p class="font-semibold text-white" x-text="chemical.molecular_formula"></p>
                                             <p class="text-sm text-gray-400" x-text="chemical.common_name || 'Unknown compound'"></p>
                                         </div>
-                                        <div class="element-symbol w-10 h-10" x-show="chemical.molecular_formula.length <= 3">
+                                        <div class="element-symbol w-10 h-10" 
+                                             x-show="chemical.molecular_formula.length <= 8"
+                                             :class="{
+                                                 'small': chemical.molecular_formula.length > 3 && chemical.molecular_formula.length <= 6,
+                                                 'tiny': chemical.molecular_formula.length > 6
+                                             }">
                                             <span class="symbol text-sm" x-text="chemical.molecular_formula"></span>
                                         </div>
                                     </div>
@@ -585,6 +883,112 @@
         </div>
     </div>
 
+    <!-- Debug Dashboard Modal (Admin Only) -->
+    <div x-show="showDebugModal && isAdmin" @click.away="showDebugModal = false" x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="glass rounded-2xl p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto slide-up">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-red-400">🔧 Debug Dashboard</h2>
+                <button @click="showDebugModal = false" 
+                        class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- System Info -->
+                <div class="glass rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-white mb-4">System Info</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">User:</span>
+                            <span class="text-white" x-text="currentUser?.username || 'Unknown'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Admin:</span>
+                            <span class="text-green-400" x-text="currentUser?.is_admin ? 'Yes' : 'No'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Chemicals:</span>
+                            <span class="text-white" x-text="chemicals.length"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Auth Token:</span>
+                            <span class="text-white" x-text="authToken ? 'Valid' : 'Invalid'"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Database Actions -->
+                <div class="glass rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-white mb-4">Database Actions</h3>
+                    <div class="space-y-3">
+                        <button @click="clearChemicals" 
+                                class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                            Clear All Chemicals
+                        </button>
+                        <button @click="clearReactions" 
+                                class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors">
+                            Clear All Reactions
+                        </button>
+                        <button @click="refreshData" 
+                                class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            Refresh All Data
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Change Request -->
+                <div class="glass rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-white mb-4">Change Request</h3>
+                    <div class="space-y-3">
+                        <div class="flex space-x-2">
+                            <select x-model="changeRequestType" 
+                                    class="px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white">
+                                <option value="">Select type</option>
+                                <option value="chemical">Chemical</option>
+                                <option value="reaction">Reaction</option>
+                            </select>
+                            <input type="number" x-model="changeRequestId" 
+                                   placeholder="ID"
+                                   class="w-24 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-gray-400">
+                        </div>
+                        <textarea x-model="changeRequestReason" 
+                                  placeholder="Reason for change request..."
+                                  class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-gray-400 resize-none"
+                                  rows="3"></textarea>
+                        <button @click="submitChangeRequest" 
+                                class="w-full py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded transition-colors">
+                            Submit Change Request
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- API Test -->
+                <div class="glass rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-white mb-4">API Test</h3>
+                    <div class="space-y-3">
+                        <div class="flex space-x-2">
+                            <input type="text" x-model="debugApiUrl" 
+                                   placeholder="API endpoint (e.g., /chemicals/)"
+                                   class="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-gray-400">
+                            <button @click="testApi" 
+                                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">
+                                Test
+                            </button>
+                        </div>
+                        <div x-show="debugApiResult" 
+                             class="bg-slate-800 rounded p-3 text-sm text-gray-300 max-h-32 overflow-y-auto">
+                            <pre x-text="debugApiResult"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Notifications -->
     <div class="fixed top-4 right-4 z-50 space-y-2">
         <template x-for="(notification, index) in notifications" :key="notification.id">
@@ -627,6 +1031,8 @@
                 isAuthenticated: false,
                 username: '',
                 authToken: null,
+                currentUser: null,
+                showDebugModal: false,
                 showTutorial: false,
                 showWorldFirstEffect: false,
                 
@@ -642,16 +1048,76 @@
                     loading: false
                 },
                 newChemical: '',
+                chemicalContext: '',
                 chemicalSearch: '',
+                debugApiUrl: '',
+                debugApiResult: '',
+                changeRequestType: '',
+                changeRequestId: '',
+                changeRequestReason: '',
                 
                 // Game Data
                 chemicals: [],
                 reactants: [],
                 selectedCatalyst: '',
+                selectedEnvironment: 'Earth (Normal)',
                 lastReaction: null,
                 myAwards: [],
                 leaderboard: [],
                 selectedLeaderboardCategory: 'discovery',
+                benchProducts: [],
+                
+                // Environment configurations
+                environments: [
+                    {
+                        name: 'Earth (Normal)',
+                        icon: '🌍',
+                        description: 'Standard atmospheric conditions',
+                        beakerColor: 'linear-gradient(to top, #3b82f6, #8b5cf6)',
+                        ambientColor: 'bg-slate-800/30',
+                        borderColor: 'border-slate-600'
+                    },
+                    {
+                        name: 'Vacuum',
+                        icon: '🌌',
+                        description: 'No atmospheric pressure',
+                        beakerColor: 'linear-gradient(to top, #1e1b4b, #312e81)',
+                        ambientColor: 'bg-indigo-900/30',
+                        borderColor: 'border-indigo-600'
+                    },
+                    {
+                        name: 'Pure Oxygen',
+                        icon: '💨',
+                        description: '100% oxygen atmosphere',
+                        beakerColor: 'linear-gradient(to top, #0ea5e9, #38bdf8)',
+                        ambientColor: 'bg-sky-800/30',
+                        borderColor: 'border-sky-600'
+                    },
+                    {
+                        name: 'Inert Gas',
+                        icon: '🫧',
+                        description: 'Noble gas environment',
+                        beakerColor: 'linear-gradient(to top, #6b7280, #9ca3af)',
+                        ambientColor: 'bg-gray-800/30',
+                        borderColor: 'border-gray-600'
+                    },
+                    {
+                        name: 'Acidic Environment',
+                        icon: '🔴',
+                        description: 'Low pH conditions',
+                        beakerColor: 'linear-gradient(to top, #dc2626, #f87171)',
+                        ambientColor: 'bg-red-800/30',
+                        borderColor: 'border-red-600'
+                    },
+                    {
+                        name: 'Basic Environment',
+                        icon: '🟢',
+                        description: 'High pH conditions',
+                        beakerColor: 'linear-gradient(to top, #16a34a, #4ade80)',
+                        ambientColor: 'bg-green-800/30',
+                        borderColor: 'border-green-600'
+                    }
+                ],
                 
                 // API Base URL
                 API_BASE: '/api/v1',
@@ -664,6 +1130,14 @@
                         c.molecular_formula.toLowerCase().includes(search) ||
                         (c.common_name && c.common_name.toLowerCase().includes(search))
                     );
+                },
+                
+                get isAdmin() {
+                    return this.currentUser && this.currentUser.is_admin;
+                },
+                
+                get currentEnvironment() {
+                    return this.environments.find(env => env.name === this.selectedEnvironment) || this.environments[0];
                 },
                 
                 // Methods
@@ -777,8 +1251,19 @@
                     }
                 },
                 
+                async fetchCurrentUser() {
+                    try {
+                        this.currentUser = await this.apiRequest('/auth/me');
+                    } catch (error) {
+                        console.error('Failed to fetch current user:', error);
+                        this.currentUser = null;
+                    }
+                },
+                
                 async loadInitialData() {
                     try {
+                        await this.fetchCurrentUser();
+                        
                         const [chemicalsData, awardsData] = await Promise.all([
                             this.apiRequest('/chemicals/'),
                             this.apiRequest('/awards/me')
@@ -800,13 +1285,15 @@
                         const chemical = await this.apiRequest('/chemicals/', {
                             method: 'POST',
                             body: JSON.stringify({
-                                molecular_formula: this.newChemical.trim()
+                                molecular_formula: this.newChemical.trim(),
+                                context: this.chemicalContext.trim() || null
                             })
                         });
                         
                         this.chemicals.push(chemical);
                         this.showNotification('Chemical Added', 'success', `${chemical.molecular_formula} has been added to your inventory`);
                         this.newChemical = '';
+                        this.chemicalContext = '';
                     } catch (error) {
                         this.showNotification('Error', 'error', error.message);
                     }
@@ -859,7 +1346,7 @@
                                 quantity: 1.0
                             })),
                             catalyst_id: this.selectedCatalyst || null,
-                            environment: "Earth (Normal)"
+                            environment: this.selectedEnvironment
                         };
                         
                         const result = await this.apiRequest('/reactions/react', {
@@ -868,6 +1355,33 @@
                         });
                         
                         this.lastReaction = result;
+                        
+                        // Store reactants info for display in results
+                        this.lastReaction.reactants = this.reactants.map(r => ({
+                            molecular_formula: r.molecular_formula,
+                            common_name: r.common_name,
+                            quantity: 1.0
+                        }));
+                        
+                        // Store environment info for display in results
+                        this.lastReaction.environment = this.selectedEnvironment;
+                        this.lastReaction.environmentConfig = this.currentEnvironment;
+
+                        // Add products to bench (simulate real chemistry)
+                        if (result.products && result.products.length > 0) {
+                            result.products.forEach(product => {
+                                const existingProduct = this.benchProducts.find(p => p.chemical_id === product.chemical_id);
+                                if (existingProduct) {
+                                    existingProduct.quantity += product.quantity;
+                                } else {
+                                    this.benchProducts.push({
+                                        ...product,
+                                        id: product.chemical_id,
+                                        addedAt: Date.now()
+                                    });
+                                }
+                            });
+                        }
 
                         // Refetch chemicals to include any new products
                         const chemicalsData = await this.apiRequest('/chemicals/');
@@ -885,6 +1399,7 @@
                         // Clear reactants
                         this.reactants = [];
                         this.selectedCatalyst = '';
+                        // Keep environment selection for next reaction
                     } catch (error) {
                         this.showNotification('Reaction Failed', 'error', error.message);
                     } finally {
@@ -931,6 +1446,128 @@
                 
                 removeNotification(index) {
                     this.notifications.splice(index, 1);
+                },
+                
+                removeFromBench(chemicalId) {
+                    const index = this.benchProducts.findIndex(p => p.chemical_id === chemicalId);
+                    if (index > -1) {
+                        this.benchProducts.splice(index, 1);
+                        this.showNotification('Product Removed', 'info', 'Product removed from lab bench');
+                    }
+                },
+                
+                // Debug Functions (Admin Only)
+                async clearChemicals() {
+                    if (!this.isAdmin) {
+                        this.showNotification('Access Denied', 'error', 'Admin access required');
+                        return;
+                    }
+                    
+                    if (!confirm('Are you sure you want to clear ALL chemicals? This action cannot be undone.')) {
+                        return;
+                    }
+                    
+                    try {
+                        const result = await this.apiRequest('/debug/chemicals/clear', {
+                            method: 'DELETE'
+                        });
+                        
+                        this.chemicals = [];
+                        this.showNotification('Debug', 'success', result.message || 'All chemicals cleared');
+                    } catch (error) {
+                        this.showNotification('Debug Error', 'error', error.message);
+                    }
+                },
+                
+                async clearReactions() {
+                    if (!this.isAdmin) {
+                        this.showNotification('Access Denied', 'error', 'Admin access required');
+                        return;
+                    }
+                    
+                    if (!confirm('Are you sure you want to clear ALL reactions? This action cannot be undone.')) {
+                        return;
+                    }
+                    
+                    try {
+                        const result = await this.apiRequest('/debug/reactions/clear', {
+                            method: 'DELETE'
+                        });
+                        
+                        this.showNotification('Debug', 'success', result.message || 'All reactions cleared');
+                    } catch (error) {
+                        this.showNotification('Debug Error', 'error', error.message);
+                    }
+                },
+                
+                async refreshData() {
+                    if (!this.isAdmin) {
+                        this.showNotification('Access Denied', 'error', 'Admin access required');
+                        return;
+                    }
+                    
+                    try {
+                        await this.loadInitialData();
+                        this.showNotification('Debug', 'success', 'All data refreshed');
+                    } catch (error) {
+                        this.showNotification('Debug Error', 'error', 'Failed to refresh data');
+                    }
+                },
+                
+                async testApi() {
+                    if (!this.isAdmin) {
+                        this.showNotification('Access Denied', 'error', 'Admin access required');
+                        return;
+                    }
+                    
+                    if (!this.debugApiUrl.trim()) {
+                        this.showNotification('Debug Error', 'error', 'Please enter an API endpoint');
+                        return;
+                    }
+                    
+                    try {
+                        const result = await this.apiRequest(this.debugApiUrl.trim());
+                        this.debugApiResult = JSON.stringify(result, null, 2);
+                        this.showNotification('Debug', 'success', 'API test successful');
+                    } catch (error) {
+                        this.debugApiResult = JSON.stringify({
+                            error: error.message,
+                            status: error.status || 'Unknown'
+                        }, null, 2);
+                        this.showNotification('Debug Error', 'error', 'API test failed');
+                    }
+                },
+                
+                async submitChangeRequest() {
+                    if (!this.isAdmin) {
+                        this.showNotification('Access Denied', 'error', 'Admin access required');
+                        return;
+                    }
+                    
+                    if (!this.changeRequestType || !this.changeRequestId || !this.changeRequestReason.trim()) {
+                        this.showNotification('Validation Error', 'error', 'Please fill in all fields');
+                        return;
+                    }
+                    
+                    try {
+                        const endpoint = `/debug/${this.changeRequestType}s/${this.changeRequestId}`;
+                        const result = await this.apiRequest(endpoint, {
+                            method: 'DELETE',
+                            body: JSON.stringify({
+                                reason: this.changeRequestReason.trim()
+                            })
+                        });
+                        
+                        this.showNotification('Change Request', 'success', result.message || 'Change request submitted successfully');
+                        
+                        // Clear form
+                        this.changeRequestType = '';
+                        this.changeRequestId = '';
+                        this.changeRequestReason = '';
+                        
+                    } catch (error) {
+                        this.showNotification('Change Request Error', 'error', error.message);
+                    }
                 }
             };
         }

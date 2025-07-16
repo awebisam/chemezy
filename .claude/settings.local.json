@@ -9,7 +9,8 @@
       "Bash(touch:*)",
       "Bash(chmod:*)",
       "Bash(alembic upgrade:*)",
-      "Bash(alembic revision:*)"
+      "Bash(alembic revision:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
