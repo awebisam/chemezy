@@ -207,7 +207,6 @@
     </style>
 </head>
 <body x-data="chemezyApp()" x-init="init()">
-    <!-- Loading Screen -->
     <div x-show="loading" x-cloak 
          class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
         <div class="text-center">
@@ -228,10 +227,58 @@
         </div>
     </div>
 
-    <!-- Auth Modal -->
-    <div x-show="!isAuthenticated" x-cloak
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
-        <div class="glass rounded-2xl p-8 max-w-md w-full slide-up">
+    <header class="glass border-b border-white/10 sticky top-0 z-30">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="element-symbol w-12 h-12">
+                    <span class="symbol text-lg">Cz</span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Chemezy Lab</h1>
+                    <p class="text-sm text-gray-400">Experiment • Discover • Learn</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <button @click="showTutorial = true" 
+                        class="text-gray-300 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </button>
+                
+                <button x-show="isAdmin" @click="showDebugModal = true" 
+                        class="text-red-400 hover:text-red-300 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                    </svg>
+                </button>
+
+                <div x-show="isAuthenticated" class="flex items-center space-x-6">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Scientist</p>
+                        <p class="font-semibold text-white" x-text="username"></p>
+                    </div>
+                    <button @click="logout" 
+                            class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                        Logout
+                    </button>
+                </div>
+                <div x-show="!isAuthenticated">
+                    <button @click="showLoginModal = true" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                        Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div x-show="showLoginModal" @keydown.escape.window="showLoginModal = false" x-cloak
+         class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-40 p-4">
+        <div @click.away="showLoginModal = false" class="glass rounded-2xl p-8 max-w-md w-full slide-up relative">
+            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
             <div class="text-center mb-8">
                 <div class="element-symbol mx-auto mb-4 float-animation">
                     <span class="number">6</span>
@@ -268,54 +315,10 @@
         </div>
     </div>
 
-    <!-- Main App -->
     <div x-show="isAuthenticated" x-cloak class="min-h-screen">
-        <!-- Header -->
-        <header class="glass border-b border-white/10 sticky top-0 z-30">
-            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="element-symbol w-12 h-12">
-                        <span class="symbol text-lg">Cz</span>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">Chemezy Lab</h1>
-                        <p class="text-sm text-gray-400">Experiment • Discover • Learn</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-6">
-                    <button @click="showTutorial = true" 
-                            class="text-gray-300 hover:text-white transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
-                    </button>
-                    
-                    <!-- Admin Debug Button -->
-                    <button x-show="isAdmin" @click="showDebugModal = true" 
-                            class="text-red-400 hover:text-red-300 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
-                        </svg>
-                    </button>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-400">Scientist</p>
-                        <p class="font-semibold text-white" x-text="username"></p>
-                    </div>
-                    <button @click="logout" 
-                            class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
         <div class="container mx-auto px-4 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Lab Workspace (2 columns) -->
                 <div class="lg:col-span-2 space-y-6">
-                    <!-- Quick Add Chemical -->
                     <div class="glass rounded-xl p-6 slide-up">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,7 +354,6 @@
                         </div>
                     </div>
 
-                    <!-- Virtual Lab Bench -->
                     <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.1s;">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,7 +362,6 @@
                             Virtual Lab Bench
                         </h2>
                         
-                        <!-- Environment Selection Tabs -->
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-300 mb-3">Select Environment</label>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -385,7 +386,6 @@
                             </div>
                         </div>
                         
-                        <!-- Reaction Setup -->
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-300 mb-3">Drag chemicals here to start reaction</label>
                             <div @drop="handleDrop($event)" 
@@ -398,7 +398,6 @@
                                      [currentEnvironment.borderColor]: !isDragging
                                  }">
                                 
-                                <!-- Environment Indicator -->
                                 <div class="text-center mb-4" x-show="reactants.length === 0">
                                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black/20 border border-white/10">
                                         <span x-text="currentEnvironment.icon"></span>
@@ -406,7 +405,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Beaker Animation -->
                                 <div class="beaker mx-auto" x-show="reactants.length > 0">
                                     <svg viewBox="0 0 200 250" class="w-full h-full">
                                         <defs>
@@ -428,7 +426,6 @@
                                         <template x-for="i in reactants.length" :key="i">
                                             <div class="bubble" :style="`left: ${20 + i * 30}%; animation-delay: ${i * 0.5}s;`"></div>
                                         </template>
-                                        <!-- Environment-specific particles -->
                                         <template x-if="selectedEnvironment === 'Vacuum'">
                                             <div class="absolute inset-0 pointer-events-none">
                                                 <div class="absolute top-1/2 left-1/2 w-1 h-1 bg-purple-400 rounded-full animate-ping" style="animation-delay: 0.5s;"></div>
@@ -450,7 +447,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Reactants Display -->
                                 <div class="mt-4 flex flex-wrap gap-2 justify-center" x-show="reactants.length > 0">
                                     <template x-for="(reactant, index) in reactants" :key="index">
                                         <div class="chemical-card px-4 py-2 rounded-lg flex items-center space-x-2 chemical-drop">
@@ -470,7 +466,6 @@
                             </div>
                         </div>
                         
-                        <!-- Catalyst Selection -->
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-300 mb-2">Catalyst (Optional)</label>
                             <select x-model="selectedCatalyst" 
@@ -482,7 +477,6 @@
                             </select>
                         </div>
                         
-                        <!-- Run Reaction Button -->
                         <button @click="runReaction" 
                                 :disabled="reactants.length === 0 || isReacting"
                                 class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg transition-all transform disabled:opacity-50 disabled:cursor-not-allowed"
@@ -498,7 +492,6 @@
                         </button>
                     </div>
 
-                    <!-- Lab Bench Products -->
                     <div x-show="benchProducts.length > 0" class="glass rounded-xl p-6 slide-up">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -536,7 +529,6 @@
                         </div>
                     </div>
 
-                    <!-- Results Panel -->
                     <div x-show="lastReaction" x-cloak class="glass rounded-xl p-6 slide-up">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,7 +548,6 @@
                         </div>
                         
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Left Column: Reaction Overview -->
                             <div class="space-y-4">
                                 <div>
                                     <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
@@ -587,7 +578,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Visual Effects -->
                                 <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
                                     <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
                                         <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,7 +589,6 @@
                                         <div class="space-y-3">
                                             <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
                                                 <div class="p-3 rounded-lg bg-slate-700/50 border border-slate-600/50">
-                                                    <!-- Gas Production Effect -->
                                                     <div x-show="effect.effect_type === 'gas_production'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
@@ -614,7 +603,6 @@
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Light Emission Effect -->
                                                     <div x-show="effect.effect_type === 'light_emission'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80; box-shadow: 0 0 10px ${effect.color}40`"></div>
@@ -630,7 +618,6 @@
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Volume Change Effect -->
                                                     <div x-show="effect.effect_type === 'volume_change'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-blue-500 border-blue-400"></div>
@@ -642,7 +629,6 @@
                                                         <div class="text-xs text-gray-400">Factor: <span class="text-white" x-text="effect.factor + 'x'"></span></div>
                                                     </div>
                                                     
-                                                    <!-- Temperature Change Effect -->
                                                     <div x-show="effect.effect_type === 'temperature_change'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :class="effect.delta_celsius > 0 ? 'bg-red-500 border-red-400' : 'bg-blue-500 border-blue-400'"></div>
@@ -654,7 +640,6 @@
                                                         <div class="text-xs text-gray-400">Change: <span class="text-white" x-text="(effect.delta_celsius > 0 ? '+' : '') + effect.delta_celsius + '°C'"></span></div>
                                                     </div>
                                                     
-                                                    <!-- Foam Production Effect -->
                                                     <div x-show="effect.effect_type === 'foam_production'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
@@ -669,7 +654,6 @@
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- State Change Effect -->
                                                     <div x-show="effect.effect_type === 'state_change'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-purple-500 border-purple-400"></div>
@@ -681,7 +665,6 @@
                                                         <div class="text-xs text-gray-400">Final State: <span class="text-white capitalize" x-text="effect.final_state"></span></div>
                                                     </div>
                                                     
-                                                    <!-- Texture Change Effect -->
                                                     <div x-show="effect.effect_type === 'texture_change'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0" :style="`background-color: ${effect.color}; border-color: ${effect.color}80`"></div>
@@ -693,7 +676,6 @@
                                                         <div class="text-xs text-gray-400">Viscosity: <span class="text-white" x-text="(effect.viscosity * 100).toFixed(0) + '%'"></span></div>
                                                     </div>
                                                     
-                                                    <!-- Spill Effect -->
                                                     <div x-show="effect.effect_type === 'spill'">
                                                         <div class="flex items-center space-x-3 mb-2">
                                                             <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-amber-500 border-amber-400"></div>
@@ -714,7 +696,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Right Column: Products -->
                             <div>
                                 <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -750,9 +731,7 @@
                     </div>
                 </div>
 
-                <!-- Right Sidebar -->
                 <div class="space-y-6">
-                    <!-- Chemical Inventory -->
                     <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.2s;">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -790,7 +769,6 @@
                         </div>
                     </div>
 
-                    <!-- Achievements -->
                     <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.3s;">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -814,7 +792,6 @@
                         </div>
                     </div>
 
-                    <!-- Leaderboard -->
                     <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.4s;">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -853,8 +830,53 @@
             </div>
         </div>
     </div>
+    <div x-show="!isAuthenticated" x-cloak class="container mx-auto px-4 py-12">
+        <div class="max-w-4xl mx-auto text-white">
+            <div class="text-center mb-12 slide-up">
+                <div class="element-symbol w-24 h-24 mx-auto mb-6 float-animation">
+                    <span class="symbol text-4xl">Cz</span>
+                </div>
+                <h1 class="text-5xl font-bold mb-4">Welcome, Future Scientist!</h1>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Ready to mix things up? In the Chemezy universe, you get to be the chemist and see what amazing reactions you can discover!
+                </p>
+            </div>
 
-    <!-- Tutorial Modal -->
+            <div class="space-y-12">
+                <div class="glass rounded-xl p-8 slide-up" style="animation-delay: 0.2s;">
+                    <h2 class="text-3xl font-bold mb-4 text-purple-400">Telling the Computer What to Mix</h2>
+                    <p class="text-gray-300 leading-relaxed mb-6">
+                        When you do an experiment, you're giving instructions to the computer's "brain". It's like sending a text message telling it what to do. For example, when you mix Water (H₂O) and Salt (NaCl) in a normal environment, the computer sees this:
+                    </p>
+                    <pre class="bg-slate-900/70 p-4 rounded-lg text-green-400 font-mono text-sm"><code>&gt; MIX: Water + Salt in a normal environment</code></pre>
+                </div>
+
+                <div class="glass rounded-xl p-8 slide-up" style="animation-delay: 0.4s;">
+                    <h2 class="text-3xl font-bold mb-4 text-emerald-400">How the Computer "Thinks"</h2>
+                    <p class="text-gray-300 leading-relaxed mb-6">
+                        The computer doesn't just guess! It has a smart, two-step way of figuring out what will happen in your experiment.
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                            <h3 class="font-semibold text-lg mb-2 text-blue-400">1. Checking Its Memory</h3>
+                            <p class="text-sm text-gray-400">First, the computer checks if it has ever seen this exact mix before. This makes sure that if you do the same experiment again, you'll always get the same result, just like in real life! This is called being <strong class="text-white">deterministic</strong>.</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                            <h3 class="font-semibold text-lg mb-2 text-blue-400">2. Thinking Like a Scientist</h3>
+                            <p class="text-sm text-gray-400">If it's a new experiment, the computer's AI brain gets to work. It looks up the real facts about the chemicals from a giant science library called PubChem. Then, it uses those facts to predict what will happen next, step-by-step. It's not guessing; it's using <strong class="text-white">real science</strong>!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-16">
+                <button @click="showLoginModal = true" class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg rounded-lg transition-all transform hover:scale-105 pulse-glow">
+                    Start Your First Experiment!
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div x-show="showTutorial" @click.away="showTutorial = false" x-cloak
          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="glass rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto slide-up">
@@ -893,7 +915,6 @@
         </div>
     </div>
 
-    <!-- Debug Dashboard Modal (Admin Only) -->
     <div x-show="showDebugModal && isAdmin" @click.away="showDebugModal = false" x-cloak
          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="glass rounded-2xl p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto slide-up">
@@ -908,7 +929,6 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- System Info -->
                 <div class="glass rounded-lg p-4">
                     <h3 class="text-lg font-semibold text-white mb-4">System Info</h3>
                     <div class="space-y-2 text-sm">
@@ -931,7 +951,6 @@
                     </div>
                 </div>
                 
-                <!-- Database Actions -->
                 <div class="glass rounded-lg p-4">
                     <h3 class="text-lg font-semibold text-white mb-4">Database Actions</h3>
                     <div class="space-y-3">
@@ -950,7 +969,6 @@
                     </div>
                 </div>
                 
-                <!-- Change Request -->
                 <div class="glass rounded-lg p-4">
                     <h3 class="text-lg font-semibold text-white mb-4">Chemical Change Request</h3>
                     <div class="space-y-3">
@@ -972,7 +990,6 @@
                     </div>
                 </div>
                 
-                <!-- API Test -->
                 <div class="glass rounded-lg p-4">
                     <h3 class="text-lg font-semibold text-white mb-4">API Test</h3>
                     <div class="space-y-3">
@@ -995,7 +1012,6 @@
         </div>
     </div>
 
-    <!-- Notifications -->
     <div class="fixed top-4 right-4 z-50 space-y-2">
         <template x-for="(notification, index) in notifications" :key="notification.id">
             <div class="notification-enter glass rounded-lg px-6 py-4 min-w-[300px] cursor-pointer"
@@ -1019,7 +1035,6 @@
         </template>
     </div>
 
-    <!-- World First Discovery Effect -->
     <div x-show="showWorldFirstEffect" x-cloak class="world-first-effect">
         🏆 WORLD FIRST! 🏆
     </div>
@@ -1035,6 +1050,7 @@
                 loading: true,
                 loadingProgress: 0,
                 isAuthenticated: false,
+                showLoginModal: false,
                 username: '',
                 authToken: null,
                 currentUser: null,
@@ -1164,6 +1180,8 @@
                         this.username = storedUsername;
                         this.isAuthenticated = true;
                         await this.loadInitialData();
+                    } else {
+                        this.isAuthenticated = false;
                     }
                     
                     this.loading = false;
@@ -1226,6 +1244,7 @@
                         this.authToken = response.access_token;
                         this.username = this.loginForm.username;
                         this.isAuthenticated = true;
+                        this.showLoginModal = false;
                         
                         // Store auth
                         localStorage.setItem('chemezy_token', this.authToken);
