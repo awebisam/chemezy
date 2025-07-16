@@ -68,7 +68,6 @@ propcache==0.3.2
 pyarrow==20.0.0
 pyasn1==0.6.1
 pycparser==2.22
-pycrypto==2.6.1
 pydantic==2.11.7
 pydantic-extra-types==2.10.5
 pydantic-settings==2.10.1
