@@ -8,6 +8,7 @@ The Enhanced Award System expands Chemezy's discovery mechanics by implementing 
 
 ### Requirement 1
 
+
 **User Story:** As a player, I want to receive awards for discovering new chemical reactions, so that my contributions to the scientific database are recognized and I feel motivated to continue experimenting.
 
 #### Acceptance Criteria

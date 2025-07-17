@@ -19,4 +19,4 @@
     "type": "askAgent",
     "prompt": "Source code files have been modified in this Python chemistry simulation project. Please review the changes and update the README.md file to reflect any new features, API changes, configuration updates, or architectural modifications. Focus on keeping the documentation accurate and helpful for developers working with this FastAPI-based chemistry game backend. Pay special attention to API endpoints, database models, services, and any changes to the core chemistry simulation logic."
   }
-}
+} 
