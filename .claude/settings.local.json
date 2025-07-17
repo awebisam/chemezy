@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic revision:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": []
+  }
+}

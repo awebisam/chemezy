@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     dspy_enabled: bool = True
 
     # Security settings (REQUIRED for production)
-    secret_key: str ="aaaas" # Must be set in environment - no default for security
+    secret_key: str  # Must be set in environment - no default for security
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
