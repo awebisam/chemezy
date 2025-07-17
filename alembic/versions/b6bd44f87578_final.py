@@ -1,8 +1,8 @@
-"""initial_migration_with_awards
+"""final
 
-Revision ID: b5eecbe2a3ba
+Revision ID: b6bd44f87578
 Revises: 
-Create Date: 2025-07-15 21:45:45.960720
+Create Date: 2025-07-17 17:33:04.807818
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision = 'b5eecbe2a3ba'
+revision = 'b6bd44f87578'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,22 +27,16 @@ def upgrade() -> None:
     sa.Column('color', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
     sa.Column('density', sa.Float(), nullable=False),
     sa.Column('properties', sa.JSON(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('molecular_formula', 'common_name', name='unique_molecular_formula_common_name')
     )
-    op.create_index(op.f('ix_chemicals_molecular_formula'), 'chemicals', ['molecular_formula'], unique=True)
-    op.create_table('deletionrequest',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('item_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('item_id', sa.Integer(), nullable=False),
-    sa.Column('reason', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
+    op.create_index(op.f('ix_chemicals_molecular_formula'), 'chemicals', ['molecular_formula'], unique=False)
     op.create_table('user',
     sa.Column('username', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), nullable=False),
+    sa.Column('public_profile', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
@@ -67,13 +61,24 @@ def upgrade() -> None:
     op.create_index(op.f('ix_award_templates_created_by'), 'award_templates', ['created_by'], unique=False)
     op.create_index(op.f('ix_award_templates_is_active'), 'award_templates', ['is_active'], unique=False)
     op.create_index(op.f('ix_award_templates_name'), 'award_templates', ['name'], unique=True)
+    op.create_table('deletionrequest',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('item_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('item_id', sa.Integer(), nullable=False),
+    sa.Column('reason', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_deletionrequest_user_id'), 'deletionrequest', ['user_id'], unique=False)
     op.create_table('reaction_cache',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('cache_key', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('reactants', sa.JSON(), nullable=True),
     sa.Column('environment', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('products', sa.JSON(), nullable=True),
-    sa.Column('state_of_product', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('effects', sa.JSON(), nullable=True),
     sa.Column('explanation', sqlmodel.sql.sqltypes.AutoString(length=2000), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True),
@@ -125,6 +130,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_reaction_cache_user_id'), table_name='reaction_cache')
     op.drop_index(op.f('ix_reaction_cache_cache_key'), table_name='reaction_cache')
     op.drop_table('reaction_cache')
+    op.drop_index(op.f('ix_deletionrequest_user_id'), table_name='deletionrequest')
+    op.drop_table('deletionrequest')
     op.drop_index(op.f('ix_award_templates_name'), table_name='award_templates')
     op.drop_index(op.f('ix_award_templates_is_active'), table_name='award_templates')
     op.drop_index(op.f('ix_award_templates_created_by'), table_name='award_templates')
@@ -132,7 +139,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_user_username'), table_name='user')
     op.drop_index(op.f('ix_user_email'), table_name='user')
     op.drop_table('user')
-    op.drop_table('deletionrequest')
     op.drop_index(op.f('ix_chemicals_molecular_formula'), table_name='chemicals')
     op.drop_table('chemicals')
     # ### end Alembic commands ###
