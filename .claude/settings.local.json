@@ -4,13 +4,14 @@
       "Bash(python:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
-      "Bash(rm:*)",
       "Bash(mkdir:*)",
       "Bash(touch:*)",
       "Bash(chmod:*)",
       "Bash(alembic upgrade:*)",
       "Bash(alembic revision:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(./tests/api/test_health.sh:*)",
+      "Bash(./tests/integration/test_reaction_flow.sh:*)"
     ],
     "deny": []
   }
