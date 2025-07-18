@@ -90,7 +90,6 @@ class ReactionService:
             prediction = ReactionPrediction(
                 products=cached_products,
                 effects=cached_reaction.effects,
-                state_of_product=cached_reaction.state_of_product,
                 explanation=cached_reaction.explanation,
                 is_world_first=False # Assume not world first if from cache, will be updated by _check_and_log_discoveries
             )
@@ -124,7 +123,6 @@ class ReactionService:
             environment=request.environment.value,
             products=[p.model_dump() for p in validated_prediction.products],
             effects=[effect.model_dump() for effect in validated_prediction.effects],
-            state_of_product=validated_prediction.state_of_product,
             explanation=validated_prediction.explanation,
             user_id=user_id
         )
@@ -292,7 +290,7 @@ class ReactionService:
                 is_soluble=True  # Default to soluble for fallback
             ) for r in reactants
         ]
-        return ReactionPrediction(products=products, effects=[], state_of_product="unknown", explanation="Fallback prediction.")
+        return ReactionPrediction(products=products, effects=[], explanation="Fallback prediction.")
 
     def get_user_reaction_cache(self, user_id: int) -> List[ReactionCache]:
         """Retrieves all cached reactions for a given user."""
