@@ -2,6 +2,8 @@
 
 ## Welcome, Future Alchemist!
 
+NOTE: AWEBISAM HAS TURNED OFF THE DEPLOYMENT TO SAVE COST(Such a cheap guy). YOU COULD TRY ME LOCALLY!!
+
 So, you've stumbled upon the secret sauce, the digital DNA, the very **source code of reality** for the Chemezy universe. Yes, that's right. While your players are busy oohing and aahing over pretty explosions and bubbling concoctions in their fancy 3D lab, *this* is where the magic (and the science, mostly the science) actually happens.
 
 Think of me as the grumpy, highly intelligent, and slightly overworked librarian of chemical reactions who's also become a master of ceremonies for an elaborate award system. The SvelteKit frontend? Oh, that's just the flashy tour guide. It asks me, "Hey, what happens if I mix water and salt?" And I, in my infinite wisdom (and with a little help from some very smart AI), tell it *exactly* what happens. But now I also keep track of who's doing what, hand out shiny digital badges, and maintain leaderboards because apparently everyone needs validation these days.
