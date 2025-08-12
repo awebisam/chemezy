@@ -6,7 +6,7 @@ from app.services.reaction_service import ReactionService
 from app.services.chemical_service import ChemicalService
 from app.services.debug_service import DebugService
 from app.services.award_service import AwardService
-from app.api.v1.endpoints.users import get_current_user
+from app.api.v1.endpoints.users import get_current_user, get_current_admin_user
 from app.models.user import User
 from app.schemas.debug import (
     DebugClearResponseSchema,
@@ -19,10 +19,13 @@ router = APIRouter()
 @router.delete("/reactions/clear", status_code=200, response_model=DebugClearResponseSchema)
 def clear_all_reactions(
     *, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user)
 ):
     """
     Clear all reactions from the database.
+    
+    Only admin users can perform this destructive operation.
     """
     reaction_service = ReactionService(db)
     result = reaction_service.clear_all_reactions()
@@ -68,10 +71,13 @@ async def request_delete_reaction(
 @router.delete("/chemicals/clear", status_code=200, response_model=DebugClearResponseSchema)
 def clear_all_chemicals(
     *, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user)
 ):
     """
     Clear all chemicals from the database.
+    
+    Only admin users can perform this destructive operation.
     """
     chemical_service = ChemicalService(db)
     result = chemical_service.clear_all_chemicals()
