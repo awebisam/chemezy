@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -8,6 +11,10 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.dspy_manager import setup_dspy
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+INDEX_FILE = BASE_DIR / "index.html"
+STATIC_DIR = BASE_DIR / "static"
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -41,6 +48,8 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -57,10 +66,7 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/")
 async def root():
     """Root endpoint serves the index.html file."""
-    file_path = "./index.html"
-    with open(file_path, "r") as f:
-        content = f.read()
-    return HTMLResponse(content=content)
+    return FileResponse(INDEX_FILE)
 
 
 @app.get("/health")

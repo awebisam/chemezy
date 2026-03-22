@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 200 200">
+  <symbol id="bubble-cluster" viewBox="0 0 80 80">
+    <circle cx="18" cy="48" r="10" fill="currentColor" opacity="0.32" />
+    <circle cx="34" cy="26" r="12" fill="currentColor" opacity="0.56" />
+    <circle cx="56" cy="46" r="9" fill="currentColor" opacity="0.42" />
+    <circle cx="48" cy="18" r="6" fill="currentColor" opacity="0.86" />
+    <circle cx="22" cy="24" r="5" fill="currentColor" opacity="0.72" />
+  </symbol>
+
+  <symbol id="vapor-plume" viewBox="0 0 100 100">
+    <path
+      d="M43 92c-16-12-20-24-14-36 3-6 10-10 11-17 1-6-2-9-6-14 14 2 23 8 27 19 7-13 6-24-4-33 15 2 25 8 31 18 7 13 2 27-8 34-8 6-14 10-15 18-2 5 0 7 3 11H43Z"
+      fill="currentColor"
+      opacity="0.7"
+    />
+  </symbol>
+
+  <symbol id="smoke-plume" viewBox="0 0 100 100">
+    <path
+      d="M27 90c-9-5-15-15-15-25 0-12 8-20 18-24-5-13 2-27 15-31 12-4 24 2 31 12 8-3 18 1 22 9 5 8 4 19-1 27 4 4 6 10 5 16-2 11-12 18-24 18H27Z"
+      fill="currentColor"
+      opacity="0.62"
+    />
+  </symbol>
+
+  <symbol id="ray-burst" viewBox="0 0 120 120">
+    <g stroke="currentColor" stroke-linecap="round" stroke-width="5" opacity="0.88">
+      <line x1="60" y1="8" x2="60" y2="30" />
+      <line x1="60" y1="90" x2="60" y2="112" />
+      <line x1="8" y1="60" x2="30" y2="60" />
+      <line x1="90" y1="60" x2="112" y2="60" />
+      <line x1="23" y1="23" x2="38" y2="38" />
+      <line x1="82" y1="82" x2="97" y2="97" />
+      <line x1="23" y1="97" x2="38" y2="82" />
+      <line x1="82" y1="38" x2="97" y2="23" />
+    </g>
+  </symbol>
+
+  <symbol id="spark-arc" viewBox="0 0 100 100">
+    <path
+      d="M11 61c18-5 18-37 39-37 12 0 20 13 30 13 4 0 8-2 9-5-1 18-14 28-26 28-11 0-18-8-27-8-13 0-18 15-25 19Z"
+      fill="currentColor"
+      opacity="0.85"
+    />
+  </symbol>
+
+  <symbol id="foam-cap" viewBox="0 0 160 60">
+    <path
+      d="M6 38c0-10 8-18 18-18 3 0 6 1 8 2 4-8 12-14 22-14 8 0 15 4 20 10 4-4 10-7 17-7 11 0 20 8 22 18 2-1 5-2 8-2 12 0 22 10 22 22H6v-11Z"
+      fill="currentColor"
+      opacity="0.92"
+    />
+  </symbol>
+
+  <symbol id="spill-puddle" viewBox="0 0 200 60">
+    <path
+      d="M22 42c0-10 13-16 28-16 6 0 11 1 16 3 5-7 15-11 29-11 11 0 21 3 28 9 5-4 12-6 20-6 18 0 33 10 33 24 0 7-4 12-10 15H31c-6-3-9-9-9-18Z"
+      fill="currentColor"
+      opacity="0.72"
+    />
+  </symbol>
+
+  <symbol id="crystal-shard" viewBox="0 0 60 90">
+    <path d="M30 5 51 31 38 84 14 84 8 34Z" fill="currentColor" opacity="0.8" />
+    <path d="M30 5 38 84" stroke="white" stroke-opacity="0.4" stroke-width="3" />
+  </symbol>
+
+  <symbol id="shimmer-swipe" viewBox="0 0 140 40">
+    <path
+      d="M8 28c22-18 41-20 61-13 14 5 27 8 63 1-18 13-35 19-49 19-16 0-36-4-75-7Z"
+      fill="currentColor"
+      opacity="0.42"
+    />
+  </symbol>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cz-favicon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f7cff" />
+      <stop offset="100%" stop-color="#3bc98f" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#f6fbff" />
+  <circle cx="32" cy="32" r="11" fill="url(#cz-favicon)" opacity="0.88" />
+  <ellipse cx="32" cy="32" rx="22" ry="8" fill="none" stroke="#4f7cff" stroke-width="3" />
+  <ellipse cx="32" cy="32" rx="22" ry="8" fill="none" stroke="#3bc98f" stroke-width="3" transform="rotate(60 32 32)" />
+</svg>

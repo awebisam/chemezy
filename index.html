@@ -1,1885 +1,939 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Chemezy is a playful chemistry lab app with layered SVG reaction effects, draggable compounds, and beaker-based mixing."
+    />
+    <meta property="og:title" content="Chemezy Lab" />
+    <meta
+      property="og:description"
+      content="Mix compounds, trigger layered effects, and explore chemistry in a kid-friendly lab app."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://chemezy.com" />
+    <title>Chemezy Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;700;800;900&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="/static/svg/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/css/app.css" />
+    <script type="module" src="/static/js/main.js"></script>
+  </head>
+  <body x-data="appShell" x-init="init()" :class="{ 'has-overlay': app.showLoginModal || app.showDebugModal || app.showTutorial || app.showPlaygroundModal }">
+    <div class="site-bg"></div>
+    <div class="floating-orb floating-orb--one"></div>
+    <div class="floating-orb floating-orb--two"></div>
+    <div class="floating-orb floating-orb--three"></div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="Chemezy: The Virtual Lab - Experiment, discover, and learn chemistry through interactive reactions and simulations. Add chemicals, run experiments in various environments, and explore reaction outcomes.">
-    <meta name="keywords"
-        content="chemistry, virtual lab, online chemistry, chemical reactions, science experiments, learning chemistry, molecular formula, chemical compounds, periodic table, science education, STEM">
-    <meta name="author" content="Awebisam">
-    <meta property="og:title" content="Chemezy: The Virtual Lab">
-    <meta property="og:description"
-        content="Chemezy: The Virtual Lab - Experiment, discover, and learn chemistry through interactive reactions and simulations. Add chemicals, run experiments in various environments, and explore reaction outcomes.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://chemezy.com">
-    <meta property="og:image" content="https://chemezy.com/images/og-image.jpg">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Chemezy: The Virtual Lab">
-    <meta name="twitter:description"
-        content="Chemezy: The Virtual Lab - Experiment, discover, and learn chemistry through interactive reactions and simulations. Add chemicals, run experiments in various environments, and explore reaction outcomes.">
-    <meta name="twitter:image" content="https://chemezy.com/images/twitter-image.jpg">
-    <title>Chemezy: The Virtual Lab</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-
-        /* Clean, modern educational theme */
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --dark: #0f172a;
-            --light: #f8fafc;
-            --muted: #64748b;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
-        }
-
-        /* Animations */
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-20px);
-            }
-        }
-
-        @keyframes pulse-glow {
-
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-            }
-
-            50% {
-                box-shadow: 0 0 40px rgba(59, 130, 246, 0.8);
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes chemicalDrop {
-            0% {
-                transform: translateY(-50px) rotate(0deg);
-                opacity: 0;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(0) rotate(360deg);
-                opacity: 1;
-            }
-        }
-
-        @keyframes bubbleUp {
-            0% {
-                bottom: 10%;
-                opacity: 0;
-                transform: translateX(0);
-            }
-
-            20% {
-                opacity: 1;
-            }
-
-            100% {
-                bottom: 90%;
-                opacity: 0;
-                transform: translateX(20px);
-            }
-        }
-
-        .float-animation {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
-
-        .slide-up {
-            animation: slideUp 0.5s ease-out;
-        }
-
-        .chemical-drop {
-            animation: chemicalDrop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        /* Glass morphism */
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Chemical element cards */
-        .chemical-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            transition: all 0.3s ease;
-            cursor: move;
-        }
-
-        .chemical-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
-        }
-
-        .chemical-card.dragging {
-            opacity: 0.5;
-            transform: rotate(5deg);
-        }
-
-        /* Reaction beaker animation */
-        .beaker {
-            position: relative;
-            width: 200px;
-            height: 250px;
-            margin: 0 auto;
-        }
-
-        .beaker-liquid {
-            position: absolute;
-            bottom: 0;
-            left: 10%;
-            right: 10%;
-            background: linear-gradient(to top, #3b82f6, #8b5cf6);
-            border-radius: 0 0 20px 20px;
-            transition: height 0.5s ease;
-        }
-
-        .bubble {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            width: 8px;
-            height: 8px;
-            animation: bubbleUp 3s infinite;
-        }
-
-        /* Notification styles */
-        .notification-enter {
-            animation: slideInRight 0.5s ease-out;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Discovery effect */
-        .world-first-effect {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4rem;
-            font-weight: bold;
-            color: #fbbf24;
-            text-shadow: 0 0 50px rgba(251, 191, 36, 0.8);
-            animation: worldFirstPulse 2s ease-out;
-            pointer-events: none;
-            z-index: 100;
-        }
-
-        @keyframes worldFirstPulse {
-            0% {
-                transform: translate(-50%, -50%) scale(0);
-                opacity: 0;
-            }
-
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                opacity: 1;
-            }
-
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 0;
-            }
-        }
-
-        /* Periodic table mini-view */
-        .element-symbol {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-
-        .element-symbol .number {
-            font-size: 0.75rem;
-            opacity: 0.8;
-        }
-
-        .element-symbol .symbol {
-            font-size: 1.5rem;
-            word-break: break-all;
-            text-align: center;
-            line-height: 1.2;
-            max-width: 100%;
-        }
-
-        .element-symbol.small .symbol {
-            font-size: 0.8rem;
-        }
-
-        .element-symbol.tiny .symbol {
-            font-size: 0.6rem;
-        }
-
-        /* Environment-specific effects */
-        .environment-vacuum {
-            background: radial-gradient(circle at center, rgba(30, 27, 75, 0.3) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-
-        .environment-oxygen {
-            background: radial-gradient(circle at center, rgba(14, 165, 233, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-
-        .environment-acidic {
-            background: radial-gradient(circle at center, rgba(220, 38, 38, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-
-        .environment-basic {
-            background: radial-gradient(circle at center, rgba(22, 163, 74, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-
-        .environment-inert {
-            background: radial-gradient(circle at center, rgba(107, 114, 128, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-    </style>
-</head>
-
-<body x-data="chemezyApp()" x-init="init()">
-    <div x-show="loading" x-cloak class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
-        <div class="text-center">
-            <div class="beaker mb-8">
-                <svg viewBox="0 0 200 250" class="w-full h-full">
-                    <path d="M50 20 L50 180 Q50 220 90 220 L110 220 Q150 220 150 180 L150 20" stroke="#3b82f6"
-                        stroke-width="3" fill="none" />
-                    <rect x="40" y="10" width="120" height="20" rx="10" fill="#3b82f6" />
-                </svg>
-                <div class="beaker-liquid" :style="`height: ${loadingProgress}%`">
-                    <div class="bubble" style="left: 20%; animation-delay: 0s;"></div>
-                    <div class="bubble" style="left: 50%; animation-delay: 1s;"></div>
-                    <div class="bubble" style="left: 80%; animation-delay: 2s;"></div>
-                </div>
-            </div>
-            <h2 class="text-2xl font-bold text-white mb-2">Preparing Your Virtual Lab...</h2>
-            <p class="text-gray-400">Loading chemical compounds</p>
+    <div class="loading-screen" x-show="app.loading" x-cloak>
+      <div class="loading-card">
+        <svg viewBox="0 0 96 96" aria-hidden="true">
+          <defs>
+            <linearGradient id="loadingOrb" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4f7cff"></stop>
+              <stop offset="100%" stop-color="#3bc98f"></stop>
+            </linearGradient>
+          </defs>
+          <circle cx="48" cy="48" r="18" fill="url(#loadingOrb)" opacity="0.85"></circle>
+          <ellipse cx="48" cy="48" rx="34" ry="14" fill="none" stroke="#4f7cff" stroke-width="3" opacity="0.3"></ellipse>
+          <ellipse cx="48" cy="48" rx="34" ry="14" fill="none" stroke="#ffbf47" stroke-width="3" opacity="0.2" transform="rotate(60 48 48)"></ellipse>
+        </svg>
+        <p class="eyebrow">Chemezy booting</p>
+        <h1 class="display" style="margin-top: 0.75rem;">Preparing the reaction lab</h1>
+        <p class="panel-copy">Loading the app shell, SVG effects, and your saved lab session.</p>
+        <div class="loading-track" style="margin-top: 1rem;">
+          <div class="loading-fill" :style="`width: ${app.loadingProgress}%`"></div>
         </div>
+      </div>
     </div>
 
-    <header class="glass border-b border-white/10 sticky top-0 z-30">
-        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="element-symbol mx-auto">
-                    <span class="number">6</span>
-                    <span class="symbol">C</span>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-white">Chemezy Lab</h1>
-                    <p class="text-sm text-gray-400">Experiment • Discover • Learn</p>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-6">
-                <button @click="showTutorial = true" class="text-gray-300 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                </button>
-
-                <button x-show="isAdmin" @click="showDebugModal = true"
-                    class="text-red-400 hover:text-red-300 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                    </svg>
-                </button>
-
-                <div x-show="isAuthenticated" class="flex items-center space-x-6">
-                    <div class="text-right">
-                        <p class="text-sm text-gray-400">Scientist</p>
-                        <p class="font-semibold text-white" x-text="username"></p>
-                    </div>
-                    <button @click="logout"
-                        class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
-                        Logout
-                    </button>
-                </div>
-                <div x-show="!isAuthenticated">
-                    <button @click="showLoginModal = true"
-                        class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                        Login
-                    </button>
-                </div>
-            </div>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="10" fill="#4f7cff" opacity="0.86"></circle>
+              <ellipse cx="24" cy="24" rx="18" ry="7" fill="none" stroke="#4f7cff" stroke-width="2"></ellipse>
+              <ellipse cx="24" cy="24" rx="18" ry="7" fill="none" stroke="#3bc98f" stroke-width="2" transform="rotate(60 24 24)"></ellipse>
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <h1 class="brand-title">Chemezy Lab</h1>
+            <p class="brand-subtitle">A simple chemistry game with layered beaker effects</p>
+          </div>
         </div>
-    </header>
 
-    <div x-show="showLoginModal" @keydown.escape.window="showLoginModal = false" x-cloak
-        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-40 p-4">
-        <div @click.away="showLoginModal = false" class="glass rounded-2xl p-8 max-w-md w-full slide-up relative">
-            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-            <div class="text-center mb-8">
-                <div class="element-symbol mx-auto mb-4 float-animation">
-                    <span class="number">6</span>
-                    <span class="symbol">C</span>
-                </div>
-                <h1 class="text-3xl font-bold text-white mb-2">Welcome to Chemezy</h1>
-                <p class="text-gray-400">Your Virtual Chemistry Laboratory</p>
+        <div class="topbar-actions">
+          <button type="button" class="icon-button" @click="app.showTutorial = true" aria-label="Open tutorial">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M9.09 9a3 3 0 115.82 1c0 2-3 3-3 3"></path>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            class="icon-button"
+            x-show="app.isAdmin"
+            x-cloak
+            @click="app.showDebugModal = true"
+            aria-label="Open debug panel"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.7 8.9 5.1 6.8 4.7 5.9 6.8 4 8l.9 2.1-.4 2.1 1.4 1.4-.4 2.1L7.6 18l1.3 1.9 2.1-.4 1.4 1.4 1.4-1.4 2.1.4 1.3-1.9 2.1-.3-.4-2.1 1.4-1.4-.4-2.1L20 8l-1.9-1.2-.3-2.1-2.1.4-1.4-1.4-1.4 1.4-2.1-.4Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+
+          <div class="topbar-user" x-show="app.isAuthenticated" x-cloak>
+            <div class="avatar" x-text="app.username ? app.username.charAt(0).toUpperCase() : 'C'"></div>
+            <div>
+              <strong x-text="app.username || 'Scientist'"></strong>
+              <span style="color: var(--ink-soft); font-size: 0.86rem;" x-text="app.currentUser ? app.currentUser.email : 'Active lab session'"></span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="button button-soft"
+            x-show="!app.isAuthenticated"
+            x-cloak
+            @click="app.openLogin()"
+          >
+            Enter Lab
+          </button>
+
+          <button
+            type="button"
+            class="button button-secondary"
+            x-show="app.isAuthenticated"
+            x-cloak
+            @click="app.logout()"
+          >
+            Log Out
+          </button>
+        </div>
+      </header>
+
+      <main class="page-shell">
+        <section class="hero" x-show="!app.isAuthenticated" x-cloak x-data="landingHero">
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <span class="eyebrow">USP: SVG reaction scenes</span>
+              <h2 class="hero-title">Chemistry that looks like a game, not a dashboard.</h2>
+              <p>
+                Chemezy turns the backend reaction payload into a bright, layered beaker scene. Gas, light,
+                foam, spills, temperature, texture, and state changes all stack inside one visual stage.
+              </p>
+              <div class="hero-cta" style="margin-top: 1.1rem;">
+                <button type="button" class="button button-primary" @click="app.openLogin()">Start Mixing</button>
+                <button type="button" class="button button-secondary" @click="app.showTutorial = true">See How It Works</button>
+              </div>
+
+              <div class="feature-grid">
+                <template x-for="card in featuredCards" :key="card.title">
+                  <article class="feature-card">
+                    <h3 x-text="card.title"></h3>
+                    <p x-text="card.body"></p>
+                  </article>
+                </template>
+              </div>
+
+              <div class="environment-strip">
+                <template x-for="environment in environments" :key="environment.name">
+                  <div class="mini-pill">
+                    <span x-text="environment.icon"></span>
+                    <span x-text="environment.shortLabel"></span>
+                  </div>
+                </template>
+              </div>
             </div>
 
-            <form @submit.prevent="handleLogin" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <input type="text" x-model="loginForm.username"
-                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="Enter your username" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                    <input type="password" x-model="loginForm.password"
-                        class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="Enter your password" required>
-                </div>
-                <button type="submit"
-                    class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105"
-                    :disabled="loginForm.loading">
-                    <span x-show="!loginForm.loading">Start Experimenting</span>
-                    <span x-show="loginForm.loading">Logging in...</span>
-                </button>
-            </form>
-
-            <p class="text-center text-gray-400 text-sm mt-6">
-                New to chemistry? Use demo/demo to explore!
-            </p>
-        </div>
-    </div>
-
-    <div x-show="isAuthenticated" x-cloak class="min-h-screen">
-        <div class="container mx-auto px-4 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="glass rounded-xl p-6 slide-up">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-blue-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            Quick Add Chemical
-                        </h2>
-                        <div class="space-y-3">
-                            <div class="flex space-x-2">
-                                <input type="text" x-model="newChemical"
-                                    @keyup.enter="!isAddingChemical && addChemical()" :disabled="isAddingChemical"
-                                    placeholder="Enter molecular formula (e.g., H2O, NaCl, C6H12O6)"
-                                    class="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
-                                <button @click="addChemical" :disabled="isAddingChemical"
-                                    class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-green-500 disabled:hover:to-emerald-600">
-                                    <span x-show="!isAddingChemical">Add to Lab</span>
-                                    <span x-show="isAddingChemical" class="flex items-center">
-                                        <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                stroke-width="4" fill="none"></circle>
-                                            <path class="opacity-75" fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                            </path>
-                                        </svg>
-                                        Adding...
-                                    </span>
-                                </button>
-                            </div>
-                            <input type="text" x-model="chemicalContext"
-                                @keyup.enter="!isAddingChemical && addChemical()" :disabled="isAddingChemical"
-                                placeholder="Optional: Add context to help identify the right compound (e.g., 'vitamin C', 'table salt')"
-                                class="w-full px-4 py-2 bg-slate-800/30 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        </div>
-                    </div>
-
-                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.1s;">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-purple-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                            Virtual Lab Bench
-                        </h2>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-300 mb-3">Select Environment</label>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                <template x-for="environment in environments" :key="environment.name">
-                                    <button @click="selectedEnvironment = environment.name"
-                                        class="p-3 rounded-lg border-2 transition-all duration-300 text-left relative overflow-hidden"
-                                        :class="{
-                                                'border-blue-500 bg-blue-500/20 shadow-lg shadow-blue-500/25': selectedEnvironment === environment.name,
-                                                'border-slate-600 bg-slate-800/30 hover:border-slate-500': selectedEnvironment !== environment.name
-                                            }">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-lg" x-text="environment.icon"></span>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="font-semibold text-white text-sm truncate"
-                                                    x-text="environment.name"></p>
-                                                <p class="text-xs text-gray-400 truncate"
-                                                    x-text="environment.description"></p>
-                                            </div>
-                                        </div>
-                                        <div x-show="selectedEnvironment === environment.name"
-                                            class="absolute top-1 right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse">
-                                        </div>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-300 mb-3">Drag chemicals here to start
-                                reaction</label>
-                            <div @drop="handleDrop($event)" @dragover.prevent @dragenter.prevent
-                                class="min-h-[200px] border-2 border-dashed rounded-lg p-4 transition-all duration-300"
-                                :class="{
-                                     'border-blue-500 bg-blue-500/10': isDragging,
-                                     [currentEnvironment.ambientColor]: !isDragging,
-                                     [currentEnvironment.borderColor]: !isDragging
-                                 }">
-
-                                <div class="text-center mb-4" x-show="reactants.length === 0">
-                                    <div
-                                        class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black/20 border border-white/10">
-                                        <span x-text="currentEnvironment.icon"></span>
-                                        <span class="text-sm text-gray-300" x-text="currentEnvironment.name"></span>
-                                    </div>
-                                </div>
-
-                                <div class="beaker mx-auto" x-show="reactants.length > 0">
-                                    <svg viewBox="0 0 200 250" class="w-full h-full">
-                                        <defs>
-                                            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                                                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                                <feMerge>
-                                                    <feMergeNode in="coloredBlur" />
-                                                    <feMergeNode in="SourceGraphic" />
-                                                </feMerge>
-                                            </filter>
-                                        </defs>
-                                        <path d="M50 20 L50 180 Q50 220 90 220 L110 220 Q150 220 150 180 L150 20"
-                                            stroke="#3b82f6" stroke-width="3" fill="none"
-                                            :filter="selectedEnvironment === 'Pure Oxygen' ? 'url(#glow)' : ''" />
-                                        <rect x="40" y="10" width="120" height="20" rx="10" fill="#3b82f6" />
-                                    </svg>
-                                    <div class="beaker-liquid transition-all duration-500"
-                                        :style="`height: ${reactants.length * 30}%; background: ${currentEnvironment.beakerColor}`">
-                                        <template x-for="i in reactants.length" :key="i">
-                                            <div class="bubble"
-                                                :style="`left: ${20 + i * 30}%; animation-delay: ${i * 0.5}s;`"></div>
-                                        </template>
-                                        <template x-if="selectedEnvironment === 'Vacuum'">
-                                            <div class="absolute inset-0 pointer-events-none">
-                                                <div class="absolute top-1/2 left-1/2 w-1 h-1 bg-purple-400 rounded-full animate-ping"
-                                                    style="animation-delay: 0.5s;"></div>
-                                                <div class="absolute top-1/3 left-1/3 w-1 h-1 bg-indigo-400 rounded-full animate-ping"
-                                                    style="animation-delay: 1s;"></div>
-                                            </div>
-                                        </template>
-                                        <template x-if="selectedEnvironment === 'Acidic Environment'">
-                                            <div class="absolute inset-0 pointer-events-none">
-                                                <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-red-400 rounded-full animate-pulse"
-                                                    style="animation-delay: 0.3s;"></div>
-                                                <div class="absolute top-3/4 left-3/4 w-2 h-2 bg-orange-400 rounded-full animate-pulse"
-                                                    style="animation-delay: 0.8s;"></div>
-                                            </div>
-                                        </template>
-                                        <template x-if="selectedEnvironment === 'Basic Environment'">
-                                            <div class="absolute inset-0 pointer-events-none">
-                                                <div class="absolute top-1/4 left-3/4 w-2 h-2 bg-green-400 rounded-full animate-pulse"
-                                                    style="animation-delay: 0.4s;"></div>
-                                                <div class="absolute top-3/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"
-                                                    style="animation-delay: 0.9s;"></div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 flex flex-wrap gap-2 justify-center" x-show="reactants.length > 0">
-                                    <template x-for="(reactant, index) in reactants" :key="index">
-                                        <div
-                                            class="chemical-card px-4 py-2 rounded-lg flex items-center space-x-2 chemical-drop">
-                                            <span class="font-semibold text-white"
-                                                x-text="reactant.molecular_formula"></span>
-                                            <button @click="removeReactant(index)"
-                                                class="text-red-400 hover:text-red-300">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </div>
-
-                                <p x-show="reactants.length === 0" class="text-center text-gray-500 mt-8">
-                                    Drop chemicals here to begin experimenting
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Catalyst (Optional)</label>
-                            <select x-model="selectedCatalyst"
-                                class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
-                                <option value="">No catalyst</option>
-                                <template x-for="chemical in chemicals" :key="chemical.id">
-                                    <option :value="chemical.id"
-                                        x-text="`${chemical.molecular_formula} ${chemical.common_name ? '(' + chemical.common_name + ')' : ''}`">
-                                    </option>
-                                </template>
-                            </select>
-                        </div>
-
-                        <button @click="runReaction" :disabled="reactants.length === 0 || isReacting"
-                            class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg transition-all transform disabled:opacity-50 disabled:cursor-not-allowed"
-                            :class="{'hover:scale-105 pulse-glow': reactants.length > 0 && !isReacting}">
-                            <span x-show="!isReacting">Start Reaction</span>
-                            <span x-show="isReacting" class="flex items-center justify-center">
-                                <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4" fill="none"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
-                                Reacting...
-                            </span>
-                        </button>
-                    </div>
-
-                    <div x-show="benchProducts.length > 0" class="glass rounded-xl p-6 slide-up">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-amber-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            Lab Bench Products
-                        </h2>
-                        <p class="text-gray-400 text-sm mb-4">Products from your reactions are stored here. You can use
-                            them in future experiments!</p>
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <template x-for="product in benchProducts" :key="product.chemical_id">
-                                <div draggable="true" @dragstart="startDrag($event, product)" @dragend="endDrag"
-                                    class="chemical-card p-3 rounded-lg cursor-move relative">
-                                    <div class="text-center">
-                                        <div class="element-symbol w-12 h-12 mx-auto mb-2" :class="{
-                                                 'small': product.molecular_formula.length > 3 && product.molecular_formula.length <= 6,
-                                                 'tiny': product.molecular_formula.length > 6
-                                             }">
-                                            <span class="symbol text-sm" x-text="product.molecular_formula"></span>
-                                        </div>
-                                        <p class="font-semibold text-white text-sm" x-text="product.molecular_formula">
-                                        </p>
-                                        <p class="text-xs text-gray-400" x-text="product.common_name || 'Product'"></p>
-                                        <p class="text-xs text-green-400 mt-1"
-                                            x-text="`${product.quantity.toFixed(2)} moles`"></p>
-                                    </div>
-                                    <button @click="removeFromBench(product.chemical_id)"
-                                        class="absolute top-1 right-1 text-red-400 hover:text-red-300 opacity-70 hover:opacity-100">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div x-show="lastReaction" x-cloak class="glass rounded-xl p-6 slide-up">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Reaction Results
-                        </h2>
-
-                        <div x-show="lastReaction.is_world_first"
-                            class="mb-6 p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="text-3xl">🏆</div>
-                                <div>
-                                    <p class="text-yellow-400 font-bold text-lg">World-First Discovery!</p>
-                                    <p class="text-yellow-300 text-sm">You're the first to create this reaction!</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
-                                        <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Reaction Overview
-                                    </h3>
-                                    <div class="text-white bg-slate-800/50 p-4 rounded-lg">
-                                        <div class="mb-3">
-                                            <p class="text-sm text-gray-400 mb-2">Reactants:</p>
-                                            <div class="flex flex-wrap gap-2">
-                                                <template x-for="(reactant, index) in lastReaction.reactants">
-                                                    <span
-                                                        class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                        <span x-text="reactant.molecular_formula"></span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <p class="text-sm text-gray-400 mb-2">Environment:</p>
-                                            <div
-                                                class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black/20 border border-white/10">
-                                                <span x-text="lastReaction.environmentConfig?.icon || '🌍'"></span>
-                                                <span class="text-sm text-gray-300"
-                                                    x-text="lastReaction.environment || 'Earth (Normal)'"></span>
-                                            </div>
-                                        </div>
-                                        <div class="text-sm text-gray-300 leading-relaxed"
-                                            x-text="lastReaction.explanation"></div>
-                                    </div>
-                                </div>
-
-                                <div x-show="lastReaction.effects && lastReaction.effects.length > 0">
-                                    <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
-                                        <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 4V2a1 1 0 011-1h4a1 1 0 011 1v2m-6 0h8m-8 0a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2m-8 0V4a1 1 0 011-1h4a1 1 0 011 1v2M9 12l2 2 4-4" />
-                                        </svg>
-                                        Visual Effects
-                                    </h3>
-                                    <div class="bg-slate-800/50 p-4 rounded-lg">
-                                        <div class="space-y-3">
-                                            <template x-for="effect in lastReaction.effects" :key="effect.effect_type">
-                                                <div class="p-3 rounded-lg bg-slate-700/50 border border-slate-600/50">
-                                                    <div x-show="effect.effect_type === 'gas_production'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                                                :style="`background-color: ${effect.color}; border-color: ${effect.color}80`">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Gas
-                                                                    Production</p>
-                                                                <p class="text-xs text-gray-400"
-                                                                    x-text="effect.gas_type"></p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-2 text-xs">
-                                                            <div class="text-gray-400">Intensity: <span
-                                                                    class="text-white"
-                                                                    x-text="(effect.intensity * 100).toFixed(0) + '%'"></span>
-                                                            </div>
-                                                            <div class="text-gray-400">Duration: <span
-                                                                    class="text-white"
-                                                                    x-text="effect.duration + 's'"></span></div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'light_emission'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                                                :style="`background-color: ${effect.color}; border-color: ${effect.color}80; box-shadow: 0 0 10px ${effect.color}40`">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Light
-                                                                    Emission</p>
-                                                                <p class="text-xs text-gray-400">Glowing light effect
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="grid grid-cols-3 gap-2 text-xs">
-                                                            <div class="text-gray-400">Intensity: <span
-                                                                    class="text-white"
-                                                                    x-text="(effect.intensity * 100).toFixed(0) + '%'"></span>
-                                                            </div>
-                                                            <div class="text-gray-400">Radius: <span class="text-white"
-                                                                    x-text="effect.radius + 'm'"></span></div>
-                                                            <div class="text-gray-400">Duration: <span
-                                                                    class="text-white"
-                                                                    x-text="effect.duration + 's'"></span></div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'volume_change'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div
-                                                                class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-blue-500 border-blue-400">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Volume
-                                                                    Change</p>
-                                                                <p class="text-xs text-gray-400">Solution volume altered
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-xs text-gray-400">Factor: <span
-                                                                class="text-white" x-text="effect.factor + 'x'"></span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'temperature_change'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                                                :class="effect.delta_celsius > 0 ? 'bg-red-500 border-red-400' : 'bg-blue-500 border-blue-400'">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Temperature
-                                                                    Change</p>
-                                                                <p class="text-xs text-gray-400"
-                                                                    x-text="effect.delta_celsius > 0 ? 'Heating' : 'Cooling'">
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-xs text-gray-400">Change: <span
-                                                                class="text-white"
-                                                                x-text="(effect.delta_celsius > 0 ? '+' : '') + effect.delta_celsius + '°C'"></span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'foam_production'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                                                :style="`background-color: ${effect.color}; border-color: ${effect.color}80`">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Foam
-                                                                    Production</p>
-                                                                <p class="text-xs text-gray-400"
-                                                                    x-text="effect.bubble_size + ' bubbles'"></p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-2 text-xs">
-                                                            <div class="text-gray-400">Density: <span class="text-white"
-                                                                    x-text="effect.density"></span></div>
-                                                            <div class="text-gray-400">Stability: <span
-                                                                    class="text-white"
-                                                                    x-text="effect.stability + 's'"></span></div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'state_change'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div
-                                                                class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-purple-500 border-purple-400">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">State Change
-                                                                </p>
-                                                                <p class="text-xs text-gray-400">Matter state transition
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-xs text-gray-400">Final State: <span
-                                                                class="text-white capitalize"
-                                                                x-text="effect.final_state"></span></div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'texture_change'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div class="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                                                :style="`background-color: ${effect.color}; border-color: ${effect.color}80`">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Texture
-                                                                    Change</p>
-                                                                <p class="text-xs text-gray-400"
-                                                                    x-text="effect.texture_type"></p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-xs text-gray-400">Viscosity: <span
-                                                                class="text-white"
-                                                                x-text="(effect.viscosity * 100).toFixed(0) + '%'"></span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="effect.effect_type === 'spill'">
-                                                        <div class="flex items-center space-x-3 mb-2">
-                                                            <div
-                                                                class="w-6 h-6 rounded-full border-2 flex-shrink-0 bg-amber-500 border-amber-400">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-semibold text-white text-sm">Spill</p>
-                                                                <p class="text-xs text-gray-400">Solution overflow</p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-2 text-xs">
-                                                            <div class="text-gray-400">Amount: <span class="text-white"
-                                                                    x-text="(effect.amount_percentage * 100).toFixed(0) + '%'"></span>
-                                                            </div>
-                                                            <div class="text-gray-400">Spread: <span class="text-white"
-                                                                    x-text="effect.spread_radius + 'm'"></span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 class="font-semibold text-gray-300 mb-3 text-lg flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                    </svg>
-                                    Products Formed
-                                </h3>
-                                <div class="space-y-3">
-                                    <template x-for="product in lastReaction.products" :key="product.chemical_id">
-                                        <div class="chemical-card p-4 rounded-lg">
-                                            <div class="flex items-center space-x-4">
-                                                <div class="element-symbol w-14 h-14" :class="{
-                                                         'small': product.molecular_formula.length > 3 && product.molecular_formula.length <= 6,
-                                                         'tiny': product.molecular_formula.length > 6
-                                                     }">
-                                                    <span class="symbol text-lg"
-                                                        x-text="product.molecular_formula"></span>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <p class="font-bold text-white text-lg"
-                                                        x-text="product.molecular_formula"></p>
-                                                    <p class="text-sm text-gray-400"
-                                                        x-text="product.common_name || 'No common name'"></p>
-                                                    <div class="flex items-center space-x-4 mt-2">
-                                                        <span
-                                                            class="text-sm text-green-400 bg-green-500/20 px-2 py-1 rounded"
-                                                            x-text="`${product.quantity.toFixed(2)} moles`"></span>
-                                                        <span class="text-xs text-gray-500">Added to bench</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.2s;">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-emerald-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                            Chemical Inventory
-                        </h2>
-                        <div class="mb-4">
-                            <input type="text" x-model="chemicalSearch" placeholder="Search chemicals..."
-                                class="w-full px-3 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none">
-                        </div>
-                        <div class="space-y-2 max-h-96 overflow-y-auto">
-                            <template x-for="chemical in filteredChemicals" :key="chemical.id">
-                                <div draggable="true" @dragstart="startDrag($event, chemical)" @dragend="endDrag"
-                                    class="chemical-card p-3 rounded-lg cursor-move">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="font-semibold text-white" x-text="chemical.molecular_formula"></p>
-                                            <p class="text-sm text-gray-400"
-                                                x-text="chemical.common_name || 'Unknown compound'"></p>
-                                        </div>
-                                        <div class="element-symbol w-10 h-10"
-                                            x-show="chemical.molecular_formula.length <= 8" :class="{
-                                                 'small': chemical.molecular_formula.length > 3 && chemical.molecular_formula.length <= 6,
-                                                 'tiny': chemical.molecular_formula.length > 6
-                                             }">
-                                            <span class="symbol text-sm" x-text="chemical.molecular_formula"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.3s;">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                            </svg>
-                            Achievements
-                        </h2>
-                        <div class="space-y-3 max-h-80 overflow-y-auto">
-                            <template x-for="award in myAwards" :key="award.id">
-                                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <p class="font-semibold text-yellow-400" x-text="award.template.name"></p>
-                                        <span class="text-xs text-gray-400">Tier <span
-                                                x-text="award.tier"></span></span>
-                                    </div>
-                                    <p class="text-sm text-gray-300" x-text="award.template.description"></p>
-                                </div>
-                            </template>
-                            <p x-show="myAwards.length === 0" class="text-center text-gray-500 py-4">
-                                Start experimenting to earn achievements!
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="glass rounded-xl p-6 slide-up" style="animation-delay: 0.4s;">
-                        <h2 class="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-orange-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Leaderboard
-                        </h2>
-                        <div class="mb-3">
-                            <select x-model="selectedLeaderboardCategory" @change="fetchLeaderboard"
-                                class="w-full px-3 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none">
-                                <option value="discovery">Discoveries</option>
-                                <option value="database_contribution">Contributions</option>
-                                <option value="achievement">Achievements</option>
-                                <option value="community">Community</option>
-                                <option value="special">Special</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <template x-for="(entry, index) in leaderboard" :key="entry.user_id">
-                                <div class="flex items-center justify-between p-2 rounded bg-slate-800/30"
-                                    :class="{'bg-gradient-to-r from-yellow-500/20 to-orange-500/20': index === 0}">
-                                    <div class="flex items-center space-x-3">
-                                        <span class="font-bold text-gray-400" x-text="`#${entry.rank}`"></span>
-                                        <span class="text-white" x-text="entry.username"></span>
-                                    </div>
-                                    <span class="font-semibold text-blue-400"
-                                        x-text="`${entry.total_points} pts`"></span>
-                                </div>
-                            </template>
-                            <p x-show="leaderboard.length === 0" class="text-center text-gray-500 py-4">
-                                No data available
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div x-show="!isAuthenticated" x-cloak class="container mx-auto px-4 py-12">
-        <div class="max-w-4xl mx-auto text-white">
-            <div class="text-center mb-12 slide-up">
-                <div class="element-symbol w-24 h-24 mx-auto mb-6 float-animation">
-                    <span class="symbol text-4xl">Cz</span>
-                </div>
-                <h1 class="text-5xl font-bold mb-4">Welcome, Future Scientist!</h1>
-                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    Ready to mix things up? In the Chemezy universe, you get to be the chemist and see what amazing
-                    reactions you can discover! 🧪
+            <div class="hero-preview">
+              <div class="hero-preview-art" x-html="previewSceneMarkup"></div>
+              <div class="hero-preview-copy">
+                <strong>Preview reaction</strong>
+                <p>
+                  A sample beaker shows how multiple effect layers render together before the user logs in.
+                  The same renderer powers the real reaction stage after authentication.
                 </p>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div class="space-y-16">
-                <div class="glass rounded-xl p-8 slide-up" style="animation-delay: 0.1s;">
-                    <h2 class="text-3xl font-bold mb-4 text-purple-400">How Chemezy Works</h2>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        When you run an experiment, you're giving instructions to the Chemezy "brain." It's like sending
-                        a secret message telling it what to do. For example, if you mix Hydrochloric Acid (HCl) and
-                        Sodium Hydroxide (NaOH), the computer sees this command:
-                    </p>
-                    <pre
-                        class="bg-slate-900/70 p-4 rounded-lg text-green-400 font-mono text-sm"><code>&gt; MIX: HCl + NaOH in a normal environment</code></pre>
-                    <p class="text-gray-300 leading-relaxed mt-6 mb-6">
-                        The computer then thinks like a scientist. It checks its memory for this exact experiment, and
-                        if it's new, it uses AI and a giant library of real-world chemical data to predict the outcome.
-                        It's not guessing; it's using <strong class="text-white">real science</strong>! It would then
-                        tell you that the acid and base neutralize each other, creating simple table salt (NaCl) and
-                        water (H₂O), and that the beaker would get a little bit warmer.
-                    </p>
-                </div>
-
-                <div class="glass rounded-xl p-8 slide-up" style="animation-delay: 0.2s;">
-                    <h2 class="text-3xl font-bold mb-4 text-amber-400">Choose Your Environment</h2>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        Where your reaction happens matters! A different environment can completely change the result.
-                        Try experimenting in all of them:
-                    </p>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">🌍</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Earth (Normal)</h3>
-                                <p class="text-xs text-gray-400">Standard lab conditions.</p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">🌌</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Vacuum</h3>
-                                <p class="text-xs text-gray-400">No air, no pressure.</p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">💨</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Pure Oxygen</h3>
-                                <p class="text-xs text-gray-400">A highly reactive atmosphere.</p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">🫧</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Inert Gas</h3>
-                                <p class="text-xs text-gray-400">An unreactive atmosphere.</p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">🔴</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Acidic</h3>
-                                <p class="text-xs text-gray-400">A low pH environment.</p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-lg flex items-center space-x-4">
-                            <span class="text-3xl">🟢</span>
-                            <div>
-                                <h3 class="font-semibold text-white">Basic</h3>
-                                <p class="text-xs text-gray-400">A high pH environment.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass rounded-xl p-8 slide-up" style="animation-delay: 0.3s;">
-                    <h2 class="text-3xl font-bold mb-4 text-cyan-400">More Than Just a Lab</h2>
-                    <p class="text-gray-300 leading-relaxed mb-6">
-                        Chemezy is also a game! As you experiment, you can unlock cool features.
-                    </p>
-                    <div class="grid md:grid-cols-3 gap-6 text-center">
-                        <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
-                            <div class="text-4xl mb-2">🔬</div>
-                            <h3 class="font-semibold text-lg text-white">Discover & Learn</h3>
-                            <p class="text-sm text-gray-400">Find new reactions and read simple explanations about
-                                what's happening and why.</p>
-                        </div>
-                        <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
-                            <div class="text-4xl mb-2">🏆</div>
-                            <h3 class="font-semibold text-lg text-white">Earn Awards</h3>
-                            <p class="text-sm text-gray-400">Get badges for your achievements, like making your first
-                                discovery or finding a rare reaction.</p>
-                        </div>
-                        <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
-                            <div class="text-4xl mb-2">📈</div>
-                            <h3 class="font-semibold text-lg text-white">Climb the Ranks</h3>
-                            <p class="text-sm text-gray-400">Compete with other chemists on the leaderboards to see who
-                                is the master of the lab.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-16">
-                <button @click="showLoginModal = true"
-                    class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg rounded-lg transition-all transform hover:scale-105 pulse-glow">
-                    Log In & Start Experimenting!
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div x-show="showTutorial" @click.away="showTutorial = false" x-cloak
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="glass rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto slide-up">
-            <h2 class="text-2xl font-bold text-white mb-6">How to Use Chemezy Lab</h2>
-
-            <div class="space-y-6 text-gray-300">
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-2">1. Add Chemicals</h3>
-                    <p>Start by adding chemicals to your inventory using the Quick Add feature. Enter molecular formulas
-                        like H2O, NaCl, or C6H12O6.</p>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-2">2. Drag & Drop</h3>
-                    <p>Drag chemicals from your inventory to the Virtual Lab Bench. You can combine multiple chemicals
-                        to see what happens!</p>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-2">3. Run Reactions</h3>
-                    <p>Click "Start Reaction" to see what happens. The system will show you the products, effects, and
-                        educational explanations.</p>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-2">4. Discover & Learn</h3>
-                    <p>Make world-first discoveries and earn achievements! Each reaction comes with detailed
-                        explanations to help you understand the chemistry.</p>
-                </div>
-
-                <div class="bg-blue-500/20 p-4 rounded-lg border border-blue-500/30">
-                    <p class="text-sm"><strong>Pro tip:</strong> Try adding a catalyst to speed up reactions or change
-                        their outcomes!</p>
-                </div>
-            </div>
-
-            <button @click="showTutorial = false"
-                class="mt-6 w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
-                Start Experimenting!
+        <section class="workspace" x-show="app.isAuthenticated" x-cloak>
+          <div class="mobile-tabs" x-show="app.isMobileLayout" x-cloak>
+            <button
+              type="button"
+              class="tab-button"
+              :class="{ 'is-active': app.activeMobileTab === 'lab' }"
+              @click="app.setMobileTab('lab')"
+            >
+              Lab
             </button>
-        </div>
-    </div>
+            <button
+              type="button"
+              class="tab-button"
+              :class="{ 'is-active': app.activeMobileTab === 'inventory' }"
+              @click="app.setMobileTab('inventory')"
+            >
+              Inventory
+            </button>
+            <button
+              type="button"
+              class="tab-button"
+              :class="{ 'is-active': app.activeMobileTab === 'profile' }"
+              @click="app.setMobileTab('profile')"
+            >
+              Profile
+            </button>
+          </div>
 
-    <div x-show="showDebugModal && isAdmin" @click.away="showDebugModal = false" x-cloak
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="glass rounded-2xl p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto slide-up">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-red-400">🔧 Debug Dashboard</h2>
-                <button @click="showDebugModal = false" class="text-gray-400 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+          <div class="workspace-grid">
+            <section
+              class="panel panel-stage"
+              x-data="labStage"
+              x-show="!app.isMobileLayout || app.activeMobileTab === 'lab'"
+              x-cloak
+            >
+              <div class="panel-header">
+                <div>
+                  <span class="panel-kicker">Playground</span>
+                  <h3 class="panel-title">Launch the chemistry mixer</h3>
+                </div>
+                <button type="button" class="button button-primary" @click="app.openPlayground()">
+                  Open Playground
                 </button>
+              </div>
+
+              <div class="playground-launch">
+                <div class="playground-launch__copy">
+                  <h4 class="section-heading">Modal-first lab flow</h4>
+                  <p class="panel-copy">
+                    The main mixer now opens as a dedicated modal. Inside it, the compound deck scrolls above the beaker,
+                    and every structural SVG lives in small swappable modules.
+                  </p>
+                  <div class="stack-inline" style="margin-top: 0.85rem;">
+                    <div class="pill">
+                      <span x-text="app.currentEnvironment.icon"></span>
+                      <span x-text="app.currentEnvironment.shortLabel"></span>
+                    </div>
+                    <div class="pill">
+                      <span x-text="`${app.playgroundDeck.length} deck compounds`"></span>
+                    </div>
+                    <div class="pill">
+                      <span x-text="`${app.reactants.length} queued`"></span>
+                    </div>
+                  </div>
+
+                  <div class="reactant-strip" style="margin-top: 1rem;" x-show="app.reactants.length" x-cloak>
+                    <template x-for="(reactant, index) in app.reactants" :key="`${reactant.id}-${index}`">
+                      <button type="button" class="reactant-chip" @click="app.removeReactant(index)">
+                        <span x-text="reactant.molecular_formula"></span>
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    </template>
+                  </div>
+
+                  <div class="card-actions" style="margin-top: 1rem;">
+                    <button type="button" class="button button-primary" @click="app.openPlayground()">
+                      Open Mixer
+                    </button>
+                    <button type="button" class="button button-secondary" @click="app.reactants = []" :disabled="!app.reactants.length">
+                      Clear Queue
+                    </button>
+                  </div>
+                </div>
+
+                <div class="playground-launch__scene">
+                  <div class="beaker-frame beaker-frame--launcher" x-html="launcherSceneMarkup"></div>
+                </div>
+              </div>
+
+              <div class="panel-subsection" x-show="app.lastReaction" x-cloak>
+                <div class="panel-header">
+                  <div>
+                    <span class="panel-kicker">Latest Result</span>
+                    <h4 class="panel-title">Products and explanation</h4>
+                  </div>
+                  <div class="pill pill--warning" x-show="app.lastReaction && app.lastReaction.is_world_first" x-cloak>
+                    World First
+                  </div>
+                </div>
+
+                <div class="result-grid">
+                  <div class="panel" style="padding: 1rem;">
+                    <h4 class="section-heading">Reaction Summary</h4>
+                    <p class="panel-copy" x-text="app.lastReaction ? app.lastReaction.explanation : ''"></p>
+                    <div class="stack-inline" style="margin-top: 0.8rem;">
+                      <div class="pill">
+                        <span x-text="app.lastReaction ? app.lastReaction.environmentConfig.icon : app.currentEnvironment.icon"></span>
+                        <span x-text="app.lastReaction ? app.lastReaction.environment : app.selectedEnvironment"></span>
+                      </div>
+                      <div class="pill" x-show="app.lastReaction && app.lastReaction.effects && app.lastReaction.effects.length" x-cloak>
+                        <span x-text="app.lastReaction ? `${app.lastReaction.effects.length} visual layer${app.lastReaction.effects.length === 1 ? '' : 's'}` : ''"></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="panel" style="padding: 1rem;">
+                    <h4 class="section-heading">Products</h4>
+                    <div class="product-grid">
+                      <template x-for="product in (app.lastReaction ? app.lastReaction.products : [])" :key="product.chemical_id || product.molecular_formula">
+                        <article class="product-card">
+                          <div class="product-card__header">
+                            <div class="formula-badge--small" x-text="product.molecular_formula"></div>
+                            <div class="color-dot" :style="`background:${app.productDetails(product).color}`"></div>
+                          </div>
+                          <h4 x-text="product.common_name || 'Unknown product'" style="margin-top: 0.65rem;"></h4>
+                          <p x-text="product.molecular_formula"></p>
+                          <div class="award-card__meta">
+                            <span class="pill" x-text="`${Number(product.quantity || 0).toFixed(2)} mol`"></span>
+                            <span class="pill pill--state" x-text="app.productDetails(product).state_of_matter || 'state unknown'"></span>
+                          </div>
+                        </article>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel-subsection" x-show="!app.lastReaction" x-cloak>
+                <div class="empty-state empty-state--compact">
+                  <strong>No completed reaction yet.</strong>
+                  <span>Open the playground modal, queue compounds from the deck, and run a mix to populate the latest result panel.</span>
+                </div>
+              </div>
+            </section>
+
+            <section
+              class="panel panel-compose"
+              x-data="inventoryComposer"
+              x-show="!app.isMobileLayout || app.activeMobileTab === 'inventory'"
+              x-cloak
+            >
+              <div class="panel-header">
+                <div>
+                  <span class="panel-kicker">Lab Cart</span>
+                  <h3 class="panel-title">Composer and Inventory</h3>
+                </div>
+                <div class="pill">
+                  <span x-text="`${app.chemicals.length} compounds`"></span>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <h4 class="section-heading">Add a Compound</h4>
+                <form class="form-stack" @submit.prevent="app.addChemical()">
+                  <div>
+                    <label class="label" for="chemicalFormula">Molecular formula</label>
+                    <input id="chemicalFormula" class="input" type="text" x-model="app.newChemical" placeholder="H2O, NaCl, C6H12O6" />
+                  </div>
+                  <div>
+                    <label class="label" for="chemicalContext">Context hint</label>
+                    <input id="chemicalContext" class="input" type="text" x-model="app.chemicalContext" placeholder="table salt, vitamin C, bleach..." />
+                  </div>
+                  <button type="submit" class="button button-primary" :disabled="app.isAddingChemical">
+                    <span x-show="!app.isAddingChemical">Add to Inventory</span>
+                    <span x-show="app.isAddingChemical" x-cloak>Adding...</span>
+                  </button>
+                  <button type="button" class="button button-secondary" @click="app.openPlayground()">
+                    Open Mixer
+                  </button>
+                </form>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="panel-header">
+                  <div>
+                    <span class="panel-kicker">Bench Tray</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Reusable products</h4>
+                  </div>
+                </div>
+                <div class="bench-list" x-show="app.benchProducts.length" x-cloak>
+                  <template x-for="product in app.benchProducts" :key="product.chemical_id">
+                    <article
+                      class="bench-card"
+                      draggable="true"
+                      @dragstart="app.startDrag($event, product)"
+                      @dragend="app.endDrag($event)"
+                    >
+                      <div class="chemical-card__header">
+                        <div class="formula-badge--small" x-text="product.molecular_formula"></div>
+                        <button type="button" class="icon-button" @click="app.removeFromBench(product.chemical_id)" aria-label="Remove product from bench">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <h4 style="margin-top: 0.6rem;" x-text="product.common_name || 'Bench product'"></h4>
+                      <p class="panel-copy" x-text="product.molecular_formula"></p>
+                      <div class="card-actions" style="margin-top: 0.65rem;">
+                        <span class="pill" x-text="`${Number(product.quantity || 0).toFixed(2)} mol`"></span>
+                        <button type="button" class="button button-secondary" @click="app.loadReactant(product)">Load</button>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+                <div class="empty-state" x-show="!app.benchProducts.length" x-cloak>
+                  <strong>Your bench is empty.</strong>
+                  <span>Products from reactions will land here for quick reuse.</span>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="panel-header">
+                  <div>
+                    <span class="panel-kicker">Inventory</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Search and load compounds</h4>
+                  </div>
+                </div>
+                <div class="form-stack">
+                  <input class="input" type="text" x-model="app.chemicalSearch" placeholder="Search formula, name, or state..." />
+                  <div class="inventory-list" x-show="app.filteredChemicals.length" x-cloak>
+                    <template x-for="chemical in app.filteredChemicals" :key="chemical.id">
+                      <article
+                        class="chemical-card"
+                        draggable="true"
+                        @dragstart="app.startDrag($event, chemical)"
+                        @dragend="app.endDrag($event)"
+                      >
+                        <div class="chemical-card__header">
+                          <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <div class="formula-badge--small" x-text="chemical.molecular_formula"></div>
+                            <div>
+                              <h4 x-text="chemical.common_name || 'Unknown compound'"></h4>
+                              <div class="stack-inline" style="gap: 0.45rem; margin-top: 0.3rem;">
+                                <span class="pill pill--state" x-text="chemical.state_of_matter"></span>
+                                <span class="color-dot" :style="`background:${chemical.color}`"></span>
+                              </div>
+                            </div>
+                          </div>
+                          <button type="button" class="button button-secondary" @click="app.loadReactant(chemical)">Load</button>
+                        </div>
+                      </article>
+                    </template>
+                  </div>
+                  <div class="inventory-empty" x-show="!app.filteredChemicals.length" x-cloak>
+                    <strong>No compounds match this search.</strong>
+                    <span>Try another formula or add a new compound above.</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside
+              class="panel panel-sidebar"
+              x-data="playerSidebar"
+              x-show="!app.isMobileLayout || app.activeMobileTab === 'profile'"
+              x-cloak
+            >
+              <div class="panel-header">
+                <div>
+                  <span class="panel-kicker">Player Sidebar</span>
+                  <h3 class="panel-title">Profile and progress</h3>
+                </div>
+                <div class="pill" x-text="app.currentUser && app.currentUser.is_admin ? 'Admin' : 'Scientist'"></div>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="stats-grid">
+                  <article class="stat-card">
+                    <span>Total reactions</span>
+                    <strong x-text="app.reactionStats.total_reactions || 0"></strong>
+                  </article>
+                  <article class="stat-card">
+                    <span>Discoveries</span>
+                    <strong x-text="app.reactionStats.total_discoveries || 0"></strong>
+                  </article>
+                  <article class="stat-card">
+                    <span>Awards</span>
+                    <strong x-text="app.dashboardStats ? app.dashboardStats.total_awards : app.myAwards.length"></strong>
+                  </article>
+                  <article class="stat-card">
+                    <span>Points</span>
+                    <strong x-text="app.dashboardStats ? app.dashboardStats.total_points : 0"></strong>
+                  </article>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="progress-card">
+                  <div class="panel-header" style="margin-bottom: 0.7rem;">
+                    <div>
+                      <span class="panel-kicker">Completion</span>
+                      <h4 class="panel-title" style="font-size: 1rem;">Award progress</h4>
+                    </div>
+                    <div class="pill" x-text="`${Math.round(app.achievementProgress)}%`"></div>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" :style="`width:${Math.round(app.achievementProgress)}%`"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <h4 class="list-title">Latest Awards</h4>
+                <div class="list-stack" x-show="app.featuredAwards.length" x-cloak>
+                  <template x-for="award in app.featuredAwards" :key="award.id">
+                    <article class="award-card">
+                      <h4 x-text="award.template.name"></h4>
+                      <p x-text="award.template.description"></p>
+                      <div class="award-card__meta">
+                        <span class="pill" x-text="award.template.category"></span>
+                        <span class="pill pill--warning" x-text="`Tier ${award.tier}`"></span>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+                <div class="empty-state" x-show="!app.featuredAwards.length" x-cloak>
+                  <strong>No awards yet.</strong>
+                  <span>Run experiments and world-first discoveries will start filling this shelf.</span>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="panel-header">
+                  <div>
+                    <span class="panel-kicker">Leaderboard</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Category standings</h4>
+                  </div>
+                </div>
+                <select class="select" x-model="app.selectedLeaderboardCategory" @change="app.fetchLeaderboard()">
+                  <option value="discovery">Discovery</option>
+                  <option value="database_contribution">Database Contribution</option>
+                  <option value="achievement">Achievement</option>
+                  <option value="community">Community</option>
+                  <option value="special">Special</option>
+                </select>
+                <div class="leaderboard-list" style="margin-top: 0.8rem;" x-show="app.leaderboard.length" x-cloak>
+                  <template x-for="(entry, index) in app.leaderboard.slice(0, 5)" :key="entry.user_id">
+                    <article class="leaderboard-row" :class="{ 'leaderboard-row--top': index === 0 }">
+                      <div>
+                        <span class="leaderboard-rank" x-text="`#${entry.rank}`"></span>
+                        <strong x-text="entry.username"></strong>
+                      </div>
+                      <span x-text="`${entry.total_points} pts`"></span>
+                    </article>
+                  </template>
+                </div>
+                <div class="empty-state" x-show="!app.leaderboard.length" x-cloak>
+                  <strong>No leaderboard data.</strong>
+                  <span>Once rankings are available, the top scientists will appear here.</span>
+                </div>
+              </div>
+
+              <div class="panel-subsection">
+                <div class="panel-header">
+                  <div>
+                    <span class="panel-kicker">Alerts</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Award notifications</h4>
+                  </div>
+                  <button type="button" class="button button-secondary" @click="app.markNotificationsRead()" :disabled="!app.awardNotifications.length">
+                    Mark read
+                  </button>
+                </div>
+                <div class="notification-list" x-show="app.awardNotifications.length" x-cloak>
+                  <template x-for="notification in app.awardNotifications.slice(0, 4)" :key="notification.id">
+                    <article class="notification-card">
+                      <div class="notification-card__header">
+                        <h4 x-text="notification.title"></h4>
+                        <time x-text="notification.timestamp"></time>
+                      </div>
+                      <p x-text="notification.message" class="panel-copy"></p>
+                    </article>
+                  </template>
+                </div>
+                <div class="empty-state" x-show="!app.awardNotifications.length" x-cloak>
+                  <strong>No unread alerts.</strong>
+                  <span>Fresh award notifications will show up here.</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Chemezy frontend overhaul for a brighter, game-like lab experience.
+        <a href="https://awebisam.com" target="_blank" rel="noreferrer">Awebisam</a>
+      </footer>
+    </div>
+
+    <div class="modal-backdrop" x-show="app.showLoginModal" x-cloak x-data="authModal" @keydown.escape.window="app.closeLogin()">
+      <div class="modal-shell" @click.outside="app.closeLogin()">
+        <button type="button" class="icon-button modal-close" @click="app.closeLogin()" aria-label="Close login modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        <span class="eyebrow">Sign in</span>
+        <h3 class="panel-title" style="margin-top: 0.9rem; font-size: 1.4rem;">Open your lab session</h3>
+        <p class="panel-copy">Use an existing Chemezy account. The frontend keeps the current `/api/v1/auth/token` flow.</p>
+        <form class="form-stack" style="margin-top: 1rem;" @submit.prevent="app.handleLogin()">
+          <div>
+            <label class="label" for="loginUsername">Username</label>
+            <input id="loginUsername" class="input" type="text" x-model="app.loginForm.username" autocomplete="username" required />
+          </div>
+          <div>
+            <label class="label" for="loginPassword">Password</label>
+            <input id="loginPassword" class="input" type="password" x-model="app.loginForm.password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="button button-primary" :disabled="app.loginForm.loading">
+            <span x-show="!app.loginForm.loading">Enter the Lab</span>
+            <span x-show="app.loginForm.loading" x-cloak>Logging in...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" x-show="app.showTutorial" x-cloak @keydown.escape.window="app.showTutorial = false">
+      <div class="modal-shell" @click.outside="app.showTutorial = false">
+        <button type="button" class="icon-button modal-close" @click="app.showTutorial = false" aria-label="Close tutorial modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        <span class="eyebrow">Quick start</span>
+        <h3 class="panel-title" style="margin-top: 0.9rem; font-size: 1.4rem;">How to use the new lab</h3>
+        <div class="tutorial-steps" style="margin-top: 1rem;">
+          <div class="step-row">
+            <div class="step-index">1</div>
+            <div>
+              <h4 class="section-heading">Add compounds to your inventory</h4>
+              <p class="panel-copy">Use the composer to create chemicals by formula, then search or filter them in the inventory list.</p>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-white mb-4">System Info</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">User:</span>
-                            <span class="text-white" x-text="currentUser?.username || 'Unknown'"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Admin:</span>
-                            <span class="text-green-400" x-text="currentUser?.is_admin ? 'Yes' : 'No'"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Chemicals:</span>
-                            <span class="text-white" x-text="chemicals.length"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Auth Token:</span>
-                            <span class="text-white" x-text="authToken ? 'Valid' : 'Invalid'"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-white mb-4">Database Actions</h3>
-                    <div class="space-y-3">
-                        <button @click="clearChemicals"
-                            class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
-                            Clear All Chemicals
-                        </button>
-                        <button @click="clearReactions"
-                            class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors">
-                            Clear All Reactions
-                        </button>
-                        <button @click="refreshData"
-                            class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                            Refresh All Data
-                        </button>
-                    </div>
-                </div>
-
-                <div class="glass rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-white mb-4">Chemical Change Request</h3>
-                    <div class="space-y-3">
-                        <select x-model="changeRequestId"
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white">
-                            <option value="">Select a chemical</option>
-                            <template x-for="chemical in chemicals" :key="chemical.id">
-                                <option :value="chemical.id"
-                                    x-text="`${chemical.molecular_formula} ${chemical.common_name ? '(' + chemical.common_name + ')' : ''}`">
-                                </option>
-                            </template>
-                        </select>
-                        <textarea x-model="changeRequestReason" placeholder="Reason for change request..."
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-gray-400 resize-none"
-                            rows="3"></textarea>
-                        <button @click="submitChangeRequest"
-                            class="w-full py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded transition-colors">
-                            Submit Change Request
-                        </button>
-                    </div>
-                </div>
-
-                <div class="glass rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-white mb-4">API Test</h3>
-                    <div class="space-y-3">
-                        <div class="flex space-x-2">
-                            <input type="text" x-model="debugApiUrl" placeholder="API endpoint (e.g., /chemicals/)"
-                                class="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-gray-400">
-                            <button @click="testApi"
-                                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">
-                                Test
-                            </button>
-                        </div>
-                        <div x-show="debugApiResult"
-                            class="bg-slate-800 rounded p-3 text-sm text-gray-300 max-h-32 overflow-y-auto">
-                            <pre x-text="debugApiResult"></pre>
-                        </div>
-                    </div>
-                </div>
+          </div>
+          <div class="step-row">
+            <div class="step-index">2</div>
+            <div>
+              <h4 class="section-heading">Open the playground modal</h4>
+              <p class="panel-copy">The main chemistry playground now opens in a dedicated modal. The compound deck scrolls above the beaker so you can drag or tap tubes into the queue.</p>
             </div>
+          </div>
+          <div class="step-row">
+            <div class="step-index">3</div>
+            <div>
+              <h4 class="section-heading">Run the reaction</h4>
+              <p class="panel-copy">Pick an environment, optionally add a catalyst, and run the mix. The beaker scene and live effect inspector both update from the real API response.</p>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-index">4</div>
+            <div>
+              <h4 class="section-heading">Reuse products and track rewards</h4>
+              <p class="panel-copy">Products land on the bench for quick reuse, while the sidebar keeps awards, notifications, and rankings in view.</p>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
-    <div class="fixed top-4 right-4 z-50 space-y-2">
-        <template x-for="(notification, index) in notifications" :key="notification.id">
-            <div class="notification-enter glass rounded-lg px-6 py-4 min-w-[300px] cursor-pointer"
-                @click="removeNotification(index)" :class="{
-                     'border-green-500/50': notification.type === 'success',
-                     'border-red-500/50': notification.type === 'error',
-                     'border-blue-500/50': notification.type === 'info',
-                     'border-yellow-500/50': notification.type === 'warning'
-                 }">
-                <p class="font-semibold" :class="{
-                       'text-green-400': notification.type === 'success',
-                       'text-red-400': notification.type === 'error',
-                       'text-blue-400': notification.type === 'info',
-                       'text-yellow-400': notification.type === 'warning'
-                   }" x-text="notification.title"></p>
-                <p class="text-sm text-gray-300" x-text="notification.message"></p>
+    <div
+      class="modal-backdrop"
+      x-show="app.showPlaygroundModal && app.isAuthenticated"
+      x-cloak
+      x-data="labStage"
+      @keydown.escape.window="app.closePlayground()"
+    >
+      <div class="modal-shell modal-shell--playground" @click.outside="app.closePlayground()">
+        <button type="button" class="icon-button modal-close" @click="app.closePlayground()" aria-label="Close chemistry playground">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+
+        <div class="playground-modal">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Chemistry playground</span>
+              <h3 class="panel-title" style="margin-top: 0.9rem; font-size: 1.5rem;">Scrollable compound deck, live beaker scene</h3>
             </div>
-        </template>
+            <div class="stack-inline">
+              <div class="pill">
+                <span x-text="app.currentEnvironment.icon"></span>
+                <span x-text="app.currentEnvironment.shortLabel"></span>
+              </div>
+              <div class="pill">
+                <span x-text="`${app.reactants.length} queued`"></span>
+              </div>
+            </div>
+          </div>
+
+          <p class="panel-copy playground-modal__copy">
+            The deck above the beaker combines bench products and inventory compounds. Structural SVGs for the deck,
+            beaker, and tubes are isolated into separate modules so you can swap the artwork later without rewriting the app flow.
+          </p>
+
+          <section class="playground-deck">
+            <div class="playground-deck__backdrop" x-html="deckBackdropMarkup"></div>
+            <div class="playground-deck__toolbar">
+              <div>
+                <span class="panel-kicker">Compound Deck</span>
+                <h4 class="panel-title" style="font-size: 1rem;">Scroll, drag, or tap to queue</h4>
+              </div>
+              <input
+                class="input playground-deck__search"
+                type="text"
+                x-model="app.chemicalSearch"
+                placeholder="Filter the deck by formula, name, or state..."
+              />
+            </div>
+
+            <div class="playground-deck__track" x-show="app.playgroundDeck.length" x-cloak>
+              <template x-for="(chemical, index) in app.playgroundDeck" :key="chemical.id || chemical.chemical_id || `${chemical.molecular_formula}-${index}`">
+                <article
+                  class="tube-card"
+                  :class="{ 'is-active': isQueued(chemical), 'tube-card--bench': chemical.deck_source === 'bench' }"
+                  draggable="true"
+                  @dragstart="app.startDrag($event, chemical)"
+                  @dragend="app.endDrag($event)"
+                >
+                  <div class="tube-card__visual" x-html="tubeMarkup(chemical, index)"></div>
+                  <div class="tube-card__copy">
+                    <div class="tube-card__meta">
+                      <span class="pill" :class="{ 'pill--warning': chemical.deck_source === 'bench' }" x-text="chemical.deck_source === 'bench' ? 'Bench' : 'Inventory'"></span>
+                      <span class="pill pill--state" x-text="chemical.state_of_matter"></span>
+                    </div>
+                    <strong x-text="chemical.common_name || 'Unknown compound'"></strong>
+                    <span class="tube-card__formula" x-text="chemical.molecular_formula"></span>
+                    <button type="button" class="button button-secondary" @click="app.loadReactant(chemical)">
+                      <span x-text="isQueued(chemical) ? 'Queued' : 'Queue'"></span>
+                    </button>
+                  </div>
+                </article>
+              </template>
+            </div>
+
+            <div class="empty-state empty-state--compact" x-show="!app.playgroundDeck.length" x-cloak>
+              <strong>No compounds in the deck yet.</strong>
+              <span>Add a new formula or clear the filter to repopulate the scrollable deck.</span>
+            </div>
+          </section>
+
+          <div class="playground-stage-grid">
+            <section class="playground-main">
+              <div class="panel-subsection">
+                <h4 class="section-heading">Choose Environment</h4>
+                <div class="environment-grid">
+                  <template x-for="environment in app.environments" :key="environment.name">
+                    <button
+                      type="button"
+                      class="environment-button"
+                      :class="{ 'is-active': app.selectedEnvironment === environment.name }"
+                      @click="app.selectedEnvironment = environment.name"
+                    >
+                      <span class="environment-button__name" x-text="`${environment.icon} ${environment.shortLabel}`"></span>
+                      <span class="environment-button__description" x-text="environment.description"></span>
+                    </button>
+                  </template>
+                </div>
+              </div>
+
+              <div
+                class="drop-zone"
+                :class="{ 'drop-zone--active': app.isDragging }"
+                @drop="handleDrop($event)"
+                @dragover.prevent
+                @dragenter.prevent="app.isDragging = true"
+                @dragleave.prevent="app.isDragging = false"
+              >
+                <div class="scene-caption">
+                  <span>Drop tubes here or tap Queue from the deck.</span>
+                  <span x-text="app.reactants.length ? `${app.reactants.length} loaded` : (app.lastReaction ? 'Last result preview' : 'No compounds yet')"></span>
+                </div>
+
+                <div class="beaker-frame beaker-frame--modal" x-html="sceneMarkup"></div>
+
+                <div class="reactant-strip" x-show="app.reactants.length" x-cloak>
+                  <template x-for="(reactant, index) in app.reactants" :key="`${reactant.id}-${index}`">
+                    <button type="button" class="reactant-chip" @click="app.removeReactant(index)">
+                      <span x-text="reactant.molecular_formula"></span>
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </template>
+                </div>
+
+                <div class="empty-state" x-show="!app.reactants.length && !app.lastReaction" x-cloak>
+                  <strong>Nothing in the chamber yet.</strong>
+                  <span>Queue one or more compounds from the deck, then run a reaction.</span>
+                </div>
+              </div>
+            </section>
+
+            <aside class="playground-sidebar">
+              <div class="playground-card">
+                <div class="panel-header" style="margin-bottom: 0.7rem;">
+                  <div>
+                    <span class="panel-kicker">Live Readout</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Effect Inspector</h4>
+                  </div>
+                </div>
+                <div class="effect-stack" x-html="inspectorMarkup"></div>
+              </div>
+
+              <div class="playground-card">
+                <h4 class="section-heading">Controls</h4>
+                <div class="field-grid field-grid--playground">
+                  <div>
+                    <label class="label" for="playgroundCatalyst">Catalyst</label>
+                    <select id="playgroundCatalyst" class="select" x-model="app.selectedCatalyst">
+                      <option value="">No catalyst</option>
+                      <template x-for="chemical in app.chemicals" :key="chemical.id">
+                        <option :value="chemical.id" x-text="`${chemical.molecular_formula} ${chemical.common_name ? '(' + chemical.common_name + ')' : ''}`"></option>
+                      </template>
+                    </select>
+                  </div>
+                  <div class="playground-actions">
+                    <button
+                      type="button"
+                      class="button button-primary"
+                      :disabled="!app.reactants.length || app.isReacting"
+                      @click="app.runReaction()"
+                    >
+                      <span x-show="!app.isReacting">Run Reaction</span>
+                      <span x-show="app.isReacting" x-cloak>Mixing...</span>
+                    </button>
+                    <button type="button" class="button button-soft" @click="app.reactants = []" :disabled="!app.reactants.length || app.isReacting">
+                      Clear Queue
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="playground-card" x-show="app.lastReaction" x-cloak>
+                <div class="panel-header" style="margin-bottom: 0.7rem;">
+                  <div>
+                    <span class="panel-kicker">Latest Result</span>
+                    <h4 class="panel-title" style="font-size: 1rem;">Summary and products</h4>
+                  </div>
+                  <div class="pill pill--warning" x-show="app.lastReaction && app.lastReaction.is_world_first" x-cloak>
+                    World First
+                  </div>
+                </div>
+                <p class="panel-copy" x-text="app.lastReaction ? app.lastReaction.explanation : ''"></p>
+                <div class="stack-inline" style="margin-top: 0.8rem;">
+                  <div class="pill">
+                    <span x-text="app.lastReaction ? app.lastReaction.environmentConfig.icon : app.currentEnvironment.icon"></span>
+                    <span x-text="app.lastReaction ? app.lastReaction.environment : app.selectedEnvironment"></span>
+                  </div>
+                  <div class="pill" x-show="app.lastReaction && app.lastReaction.effects && app.lastReaction.effects.length" x-cloak>
+                    <span x-text="app.lastReaction ? `${app.lastReaction.effects.length} visual layer${app.lastReaction.effects.length === 1 ? '' : 's'}` : ''"></span>
+                  </div>
+                </div>
+                <div class="product-grid product-grid--modal" style="margin-top: 1rem;">
+                  <template x-for="product in (app.lastReaction ? app.lastReaction.products : [])" :key="product.chemical_id || product.molecular_formula">
+                    <article class="product-card">
+                      <div class="product-card__header">
+                        <div class="formula-badge--small" x-text="product.molecular_formula"></div>
+                        <div class="color-dot" :style="`background:${app.productDetails(product).color}`"></div>
+                      </div>
+                      <h4 style="margin-top: 0.65rem;" x-text="product.common_name || 'Unknown product'"></h4>
+                      <p x-text="product.molecular_formula"></p>
+                      <div class="award-card__meta">
+                        <span class="pill" x-text="`${Number(product.quantity || 0).toFixed(2)} mol`"></span>
+                        <span class="pill pill--state" x-text="app.productDetails(product).state_of_matter || 'state unknown'"></span>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div x-show="showWorldFirstEffect" x-cloak class="world-first-effect">
-        🏆 WORLD FIRST! 🏆
+    <div
+      class="modal-backdrop"
+      x-show="app.showDebugModal && app.isAdmin"
+      x-cloak
+      x-data="debugModal"
+      @keydown.escape.window="app.showDebugModal = false"
+    >
+      <div class="modal-shell modal-shell--wide" @click.outside="app.showDebugModal = false">
+        <button type="button" class="icon-button modal-close" @click="app.showDebugModal = false" aria-label="Close debug modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        <span class="eyebrow">Admin tools</span>
+        <h3 class="panel-title" style="margin-top: 0.9rem; font-size: 1.4rem;">Debug and data controls</h3>
+
+        <div class="debug-grid" style="margin-top: 1rem;">
+          <article class="debug-card">
+            <h4 class="section-heading">System info</h4>
+            <p class="panel-copy" x-text="`User: ${app.currentUser ? app.currentUser.username : 'unknown'}`"></p>
+            <p class="panel-copy" x-text="`Chemicals: ${app.chemicals.length}`"></p>
+            <p class="panel-copy" x-text="`Token: ${app.authToken ? 'loaded' : 'missing'}`"></p>
+          </article>
+
+          <article class="debug-card">
+            <h4 class="section-heading">Danger zone</h4>
+            <div class="form-stack">
+              <button type="button" class="button button-danger" @click="app.clearChemicals()">Clear chemicals</button>
+              <button type="button" class="button button-secondary" @click="app.clearReactions()">Clear reactions</button>
+              <button type="button" class="button button-soft" @click="app.refreshData()">Refresh panels</button>
+            </div>
+          </article>
+
+          <article class="debug-card">
+            <h4 class="section-heading">Chemical change request</h4>
+            <div class="form-stack">
+              <select class="select" x-model="app.changeRequestId">
+                <option value="">Select chemical</option>
+                <template x-for="chemical in app.chemicals" :key="chemical.id">
+                  <option :value="chemical.id" x-text="`${chemical.molecular_formula} (${chemical.common_name || 'n/a'})`"></option>
+                </template>
+              </select>
+              <textarea class="textarea" x-model="app.changeRequestReason" placeholder="Reason for removal request..."></textarea>
+              <button type="button" class="button button-primary" @click="app.submitChangeRequest()">Submit request</button>
+            </div>
+          </article>
+
+          <article class="debug-card">
+            <h4 class="section-heading">API tester</h4>
+            <div class="form-stack">
+              <input class="input" type="text" x-model="app.debugApiUrl" placeholder="/chemicals/" />
+              <button type="button" class="button button-secondary" @click="app.testApi()">Run request</button>
+              <pre class="debug-console" x-text="app.debugApiResult || 'API output will appear here.'"></pre>
+            </div>
+          </article>
+        </div>
+      </div>
     </div>
 
-    <footer class="text-center py-8 text-gray-500 text-sm">
-        An experiment by <a href="https://awebisam.com" target="_blank"
-            class="text-blue-400 hover:text-blue-300">Awebisam</a>
-    </footer>
-
-    <script>
-        function chemezyApp() {
-            return {
-                // State
-                loading: true,
-                loadingProgress: 0,
-                isAuthenticated: false,
-                showLoginModal: false,
-                username: '',
-                authToken: null,
-                currentUser: null,
-                showDebugModal: false,
-                showTutorial: false,
-                showWorldFirstEffect: false,
-
-                // UI State
-                notifications: [],
-                isDragging: false,
-                isReacting: false,
-
-                // Form Data
-                loginForm: {
-                    username: '',
-                    password: '',
-                    loading: false
-                },
-                newChemical: '',
-                chemicalContext: '',
-                chemicalSearch: '',
-                isAddingChemical: false,
-                debugApiUrl: '',
-                debugApiResult: '',
-                changeRequestType: '',
-                changeRequestId: '',
-                changeRequestReason: '',
-
-                // Game Data
-                chemicals: [],
-                reactants: [],
-                selectedCatalyst: '',
-                selectedEnvironment: 'Earth (Normal)',
-                lastReaction: null,
-                myAwards: [],
-                leaderboard: [],
-                selectedLeaderboardCategory: 'discovery',
-                benchProducts: [],
-
-                // Environment configurations
-                environments: [
-                    {
-                        name: 'Earth (Normal)',
-                        icon: '🌍',
-                        description: 'Standard atmospheric conditions',
-                        beakerColor: 'linear-gradient(to top, #3b82f6, #8b5cf6)',
-                        ambientColor: 'bg-slate-800/30',
-                        borderColor: 'border-slate-600'
-                    },
-                    {
-                        name: 'Vacuum',
-                        icon: '🌌',
-                        description: 'No atmospheric pressure',
-                        beakerColor: 'linear-gradient(to top, #1e1b4b, #312e81)',
-                        ambientColor: 'bg-indigo-900/30',
-                        borderColor: 'border-indigo-600'
-                    },
-                    {
-                        name: 'Pure Oxygen',
-                        icon: '💨',
-                        description: '100% oxygen atmosphere',
-                        beakerColor: 'linear-gradient(to top, #0ea5e9, #38bdf8)',
-                        ambientColor: 'bg-sky-800/30',
-                        borderColor: 'border-sky-600'
-                    },
-                    {
-                        name: 'Inert Gas',
-                        icon: '🫧',
-                        description: 'Noble gas environment',
-                        beakerColor: 'linear-gradient(to top, #6b7280, #9ca3af)',
-                        ambientColor: 'bg-gray-800/30',
-                        borderColor: 'border-gray-600'
-                    },
-                    {
-                        name: 'Acidic Environment',
-                        icon: '🔴',
-                        description: 'Low pH conditions',
-                        beakerColor: 'linear-gradient(to top, #dc2626, #f87171)',
-                        ambientColor: 'bg-red-800/30',
-                        borderColor: 'border-red-600'
-                    },
-                    {
-                        name: 'Basic Environment',
-                        icon: '🟢',
-                        description: 'High pH conditions',
-                        beakerColor: 'linear-gradient(to top, #16a34a, #4ade80)',
-                        ambientColor: 'bg-green-800/30',
-                        borderColor: 'border-green-600'
-                    }
-                ],
-
-                // API Base URL
-                API_BASE: '/api/v1',
-
-                // Computed
-                get filteredChemicals() {
-                    if (!this.chemicalSearch) return this.chemicals;
-                    const search = this.chemicalSearch.toLowerCase();
-                    return this.chemicals.filter(c =>
-                        c.molecular_formula.toLowerCase().includes(search) ||
-                        (c.common_name && c.common_name.toLowerCase().includes(search))
-                    );
-                },
-
-                get isAdmin() {
-                    return this.currentUser && this.currentUser.is_admin;
-                },
-
-                get currentEnvironment() {
-                    return this.environments.find(env => env.name === this.selectedEnvironment) || this.environments[0];
-                },
-
-                // Methods
-                async init() {
-                    // Simulate loading
-                    for (let i = 0; i <= 100; i += 10) {
-                        this.loadingProgress = i;
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-
-                    // Check stored auth
-                    const storedToken = localStorage.getItem('chemezy_token');
-                    const storedUsername = localStorage.getItem('chemezy_username');
-
-                    if (storedToken && storedUsername) {
-                        this.authToken = storedToken;
-                        this.username = storedUsername;
-                        this.isAuthenticated = true;
-                        await this.loadInitialData();
-                    } else {
-                        this.isAuthenticated = false;
-                    }
-
-                    this.loading = false;
-                },
-
-                async apiRequest(endpoint, options = {}) {
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    };
-
-                    if (this.authToken) {
-                        headers['Authorization'] = `Bearer ${this.authToken}`;
-                    }
-
-                    try {
-                        const response = await fetch(`${this.API_BASE}${endpoint}`, {
-                            ...options,
-                            headers
-                        });
-
-                        if (!response.ok) {
-                            let error = { detail: `HTTP error! status: ${response.status}` };
-                            try {
-                                error = await response.json();
-                            } catch (e) {
-                                // The response was not valid JSON, do nothing
-                            }
-
-                            if (response.status === 401 || (error.detail && typeof error.detail === 'string' && error.detail.includes('Could not validate credentials'))) {
-                                this.logout(true); // Pass true for session expiration
-                                throw new Error('Session expired. Please log in again.');
-                            }
-
-                            throw new Error(error.detail || 'API request failed');
-                        }
-
-                        return response.status === 204 ? null : await response.json();
-                    } catch (error) {
-                        throw error;
-                    }
-                },
-
-                async handleLogin() {
-                    this.loginForm.loading = true;
-
-                    try {
-                        const formData = new URLSearchParams();
-                        formData.append('username', this.loginForm.username);
-                        formData.append('password', this.loginForm.password);
-
-                        const response = await this.apiRequest('/auth/token', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: formData
-                        });
-
-                        this.authToken = response.access_token;
-                        this.username = this.loginForm.username;
-                        this.isAuthenticated = true;
-                        this.showLoginModal = false;
-
-                        // Store auth
-                        localStorage.setItem('chemezy_token', this.authToken);
-                        localStorage.setItem('chemezy_username', this.username);
-
-                        // Load initial data
-                        await this.loadInitialData();
-
-                        this.showNotification('Welcome to Chemezy Lab!', 'success', `Logged in as ${this.username}`);
-                    } catch (error) {
-                        this.showNotification('Login Failed', 'error', error.message);
-                    } finally {
-                        this.loginForm.loading = false;
-                    }
-                },
-
-                logout(sessionExpired = false) {
-                    this.isAuthenticated = false;
-                    this.authToken = null;
-                    this.username = '';
-                    localStorage.removeItem('chemezy_token');
-                    localStorage.removeItem('chemezy_username');
-                    this.loginForm.username = '';
-                    this.loginForm.password = '';
-
-                    if (sessionExpired) {
-                        this.showNotification('Session Expired', 'error', 'Your session has expired. Please log in again.');
-                    } else {
-                        this.showNotification('Logged Out', 'info', 'See you next time!');
-                    }
-                },
-
-                async fetchCurrentUser() {
-                    try {
-                        this.currentUser = await this.apiRequest('/auth/me');
-                    } catch (error) {
-                        console.error('Failed to fetch current user:', error);
-                        this.currentUser = null;
-                    }
-                },
-
-                async loadInitialData() {
-                    try {
-                        await this.fetchCurrentUser();
-
-                        const [chemicalsData, awardsData] = await Promise.all([
-                            this.apiRequest('/chemicals/'),
-                            this.apiRequest('/awards/me')
-                        ]);
-
-                        this.chemicals = chemicalsData.results || [];
-                        this.myAwards = awardsData || [];
-
-                        await this.fetchLeaderboard();
-                    } catch (error) {
-                        this.showNotification('Error', 'error', 'Failed to load initial data');
-                    }
-                },
-
-                async addChemical() {
-                    if (!this.newChemical.trim()) return;
-
-                    this.isAddingChemical = true;
-
-                    try {
-                        const chemical = await this.apiRequest('/chemicals/', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                molecular_formula: this.newChemical.trim(),
-                                context: this.chemicalContext.trim() || null
-                            })
-                        });
-
-                        this.chemicals.push(chemical);
-                        this.showNotification('Chemical Added', 'success', `${chemical.molecular_formula} has been added to your inventory`);
-                        this.newChemical = '';
-                        this.chemicalContext = '';
-                    } catch (error) {
-                        this.showNotification('Error', 'error', error.message);
-                    } finally {
-                        this.isAddingChemical = false;
-                    }
-                },
-
-                startDrag(event, chemical) {
-                    event.dataTransfer.effectAllowed = 'copy';
-                    event.dataTransfer.setData('chemical', JSON.stringify(chemical));
-                    this.isDragging = true;
-                    event.target.classList.add('dragging');
-                },
-
-                endDrag(event) {
-                    this.isDragging = false;
-                    event.target.classList.remove('dragging');
-                },
-
-                handleDrop(event) {
-                    event.preventDefault();
-                    this.isDragging = false;
-
-                    try {
-                        const chemical = JSON.parse(event.dataTransfer.getData('chemical'));
-
-                        // Check if already added
-                        if (!this.reactants.find(r => r.id === chemical.id)) {
-                            this.reactants.push(chemical);
-                            this.showNotification('Chemical Added', 'info', `${chemical.molecular_formula} added to reaction`);
-                        } else {
-                            this.showNotification('Already Added', 'warning', 'This chemical is already in the reaction');
-                        }
-                    } catch (error) {
-                        console.error('Drop error:', error);
-                    }
-                },
-
-                removeReactant(index) {
-                    this.reactants.splice(index, 1);
-                },
-
-                async runReaction() {
-                    if (this.reactants.length === 0) return;
-
-                    this.isReacting = true;
-
-                    try {
-                        const reactionData = {
-                            reactants: this.reactants.map(r => ({
-                                chemical_id: r.id,
-                                quantity: 1.0
-                            })),
-                            catalyst_id: this.selectedCatalyst || null,
-                            environment: this.selectedEnvironment
-                        };
-
-                        const result = await this.apiRequest('/reactions/react', {
-                            method: 'POST',
-                            body: JSON.stringify(reactionData)
-                        });
-
-                        this.lastReaction = result;
-
-                        // Store reactants info for display in results
-                        this.lastReaction.reactants = this.reactants.map(r => ({
-                            molecular_formula: r.molecular_formula,
-                            common_name: r.common_name,
-                            quantity: 1.0
-                        }));
-
-                        // Store environment info for display in results
-                        this.lastReaction.environment = this.selectedEnvironment;
-                        this.lastReaction.environmentConfig = this.currentEnvironment;
-
-                        // Add products to bench (simulate real chemistry)
-                        if (result.products && result.products.length > 0) {
-                            result.products.forEach(product => {
-                                const existingProduct = this.benchProducts.find(p => p.chemical_id === product.chemical_id);
-                                if (existingProduct) {
-                                    existingProduct.quantity += product.quantity;
-                                } else {
-                                    this.benchProducts.push({
-                                        ...product,
-                                        id: product.chemical_id,
-                                        addedAt: Date.now()
-                                    });
-                                }
-                            });
-                        }
-
-                        // Refetch chemicals to include any new products
-                        const chemicalsData = await this.apiRequest('/chemicals/');
-                        this.chemicals = chemicalsData.results || [];
-
-                        if (result.is_world_first) {
-                            this.showWorldFirstDiscovery();
-                            // Reload awards
-                            const awardsData = await this.apiRequest('/awards/me');
-                            this.myAwards = awardsData || [];
-                        }
-
-                        this.showNotification('Reaction Complete', 'success', 'Check the results below!');
-
-                        // Clear reactants
-                        this.reactants = [];
-                        this.selectedCatalyst = '';
-                        // Keep environment selection for next reaction
-                    } catch (error) {
-                        this.showNotification('Reaction Failed', 'error', error.message);
-                    } finally {
-                        this.isReacting = false;
-                    }
-                },
-
-                async fetchLeaderboard() {
-                    try {
-                        const data = await this.apiRequest(`/awards/leaderboard/${this.selectedLeaderboardCategory}`);
-                        this.leaderboard = data || [];
-                    } catch (error) {
-                        console.error('Failed to fetch leaderboard:', error);
-                    }
-                },
-
-                showWorldFirstDiscovery() {
-                    this.showWorldFirstEffect = true;
-                    setTimeout(() => {
-                        this.showWorldFirstEffect = false;
-                    }, 2000);
-
-                    this.showNotification('World First!', 'warning', 'Congratulations! You\'ve made a new discovery!');
-                },
-
-                showNotification(title, type, message) {
-                    const notification = {
-                        id: Date.now(),
-                        title,
-                        type,
-                        message
-                    };
-
-                    this.notifications.push(notification);
-
-                    // Auto-remove after 5 seconds
-                    setTimeout(() => {
-                        const index = this.notifications.findIndex(n => n.id === notification.id);
-                        if (index > -1) {
-                            this.notifications.splice(index, 1);
-                        }
-                    }, 5000);
-                },
-
-                removeNotification(index) {
-                    this.notifications.splice(index, 1);
-                },
-
-                removeFromBench(chemicalId) {
-                    const index = this.benchProducts.findIndex(p => p.chemical_id === chemicalId);
-                    if (index > -1) {
-                        this.benchProducts.splice(index, 1);
-                        this.showNotification('Product Removed', 'info', 'Product removed from lab bench');
-                    }
-                },
-
-                // Debug Functions (Admin Only)
-                async clearChemicals() {
-                    if (!this.isAdmin) {
-                        this.showNotification('Access Denied', 'error', 'Admin access required');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to clear ALL chemicals? This action cannot be undone.')) {
-                        return;
-                    }
-
-                    try {
-                        const result = await this.apiRequest('/debug/chemicals/clear', {
-                            method: 'DELETE'
-                        });
-
-                        this.chemicals = [];
-                        this.showNotification('Debug', 'success', result.message || 'All chemicals cleared');
-                    } catch (error) {
-                        this.showNotification('Debug Error', 'error', error.message);
-                    }
-                },
-
-                async clearReactions() {
-                    if (!this.isAdmin) {
-                        this.showNotification('Access Denied', 'error', 'Admin access required');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to clear ALL reactions? This action cannot be undone.')) {
-                        return;
-                    }
-
-                    try {
-                        const result = await this.apiRequest('/debug/reactions/clear', {
-                            method: 'DELETE'
-                        });
-
-                        this.showNotification('Debug', 'success', result.message || 'All reactions cleared');
-                    } catch (error) {
-                        this.showNotification('Debug Error', 'error', error.message);
-                    }
-                },
-
-                async refreshData() {
-                    if (!this.isAdmin) {
-                        this.showNotification('Access Denied', 'error', 'Admin access required');
-                        return;
-                    }
-
-                    try {
-                        await this.loadInitialData();
-                        this.showNotification('Debug', 'success', 'All data refreshed');
-                    } catch (error) {
-                        this.showNotification('Debug Error', 'error', 'Failed to refresh data');
-                    }
-                },
-
-                async testApi() {
-                    if (!this.isAdmin) {
-                        this.showNotification('Access Denied', 'error', 'Admin access required');
-                        return;
-                    }
-
-                    if (!this.debugApiUrl.trim()) {
-                        this.showNotification('Debug Error', 'error', 'Please enter an API endpoint');
-                        return;
-                    }
-
-                    try {
-                        const result = await this.apiRequest(this.debugApiUrl.trim());
-                        this.debugApiResult = JSON.stringify(result, null, 2);
-                        this.showNotification('Debug', 'success', 'API test successful');
-                    } catch (error) {
-                        this.debugApiResult = JSON.stringify({
-                            error: error.message,
-                            status: error.status || 'Unknown'
-                        }, null, 2);
-                        this.showNotification('Debug Error', 'error', 'API test failed');
-                    }
-                },
-
-                async submitChangeRequest() {
-                    if (!this.isAdmin) {
-                        this.showNotification('Access Denied', 'error', 'Admin access required');
-                        return;
-                    }
-
-                    if (!this.changeRequestId || !this.changeRequestReason.trim()) {
-                        this.showNotification('Validation Error', 'error', 'Please fill in all fields');
-                        return;
-                    }
-
-                    try {
-                        const endpoint = `/debug/chemicals/${this.changeRequestId}`;
-                        const result = await this.apiRequest(endpoint, {
-                            method: 'DELETE',
-                            body: JSON.stringify({
-                                reason: this.changeRequestReason.trim()
-                            })
-                        });
-
-                        this.showNotification('Change Request', 'success', result.message || 'Change request submitted successfully');
-
-                        // Clear form
-                        this.changeRequestId = '';
-                        this.changeRequestReason = '';
-
-                    } catch (error) {
-                        this.showNotification('Change Request Error', 'error', error.message);
-                    }
-                }
-            };
-        }
-    </script>
-</body>
-
+    <div class="toast-stack" x-data="notificationsPanel">
+      <template x-for="toast in app.notifications" :key="toast.id">
+        <article class="toast" :class="`toast--${toast.type}`" @click="app.dismissToast(toast.id)">
+          <strong x-text="toast.title"></strong>
+          <span x-text="toast.message"></span>
+        </article>
+      </template>
+    </div>
+
+    <div class="celebration-overlay" x-show="app.showWorldFirstEffect" x-cloak>
+      <div class="celebration-card">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="celebrationStar" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffbf47"></stop>
+              <stop offset="100%" stop-color="#ff7b54"></stop>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="40" fill="rgba(255,191,71,0.16)"></circle>
+          <polygon points="60,12 73,43 107,43 80,63 91,96 60,77 29,96 40,63 13,43 47,43" fill="url(#celebrationStar)"></polygon>
+        </svg>
+        <p class="eyebrow">World first</p>
+        <h3 class="panel-title" style="font-size: 1.5rem; margin-top: 0.75rem;">You discovered a brand new reaction.</h3>
+        <p class="panel-copy">The new frontend keeps the celebration, but shifts it toward a friendlier game reward moment.</p>
+      </div>
+    </div>
+  </body>
 </html>
